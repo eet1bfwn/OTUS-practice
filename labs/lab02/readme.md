@@ -1,5 +1,19 @@
 # Лабораторная работа "VLAN и маршрутизация между VLAN"
 
+---
+
+
+
+[Исходные данные](https://github.com/eet1bfwn/OTUS-practice/tree/main/labs/lab02#%D0%B8%D1%81%D1%85%D0%BE%D0%B4%D0%BD%D1%8B%D0%B5-%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D0%B5)
+
+[Задачи](https://github.com/eet1bfwn/OTUS-practice/tree/main/labs/lab02#objectives)
+
+[Результирующие конфигурации устройств](configs)
+
+---
+
+
+
 ## Исходные данные
 
 ### Топология
@@ -27,7 +41,7 @@
 | 7    | ParkingLot | S1: F0/2-4, F0/7-24, G0/1-2 S2: F0/2-17, F0/19-24, G0/1-2 |
 | 8    | Native     | N/A                                                       |
 
-## Objectives
+## ## Objectives
 
 [Part 1: Build the Network and Configure Basic Device Settings](readme.md#part-1-build-the-network-and-configure-basic-device-settings)
 
@@ -41,7 +55,7 @@
 
 ---
 
-### Part 1: Build the Network and Configure Basic Device Settings
+### ### Part 1: Build the Network and Configure Basic Device Settings
 
 #### Step 1: Cable the network as shown in the topology.
 
