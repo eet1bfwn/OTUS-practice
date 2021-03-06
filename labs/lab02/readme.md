@@ -41,11 +41,7 @@
 
 ---
 
-
-
 ### Part 1: Build the Network and Configure Basic Device Settings
-
-
 
 #### Step 1: Cable the network as shown in the topology.
 
@@ -105,7 +101,7 @@ login
 h. Encrypt the plaintext passwords.
 
 ```
-service password encryption
+service password-encryption
 ```
 
 i. Create a banner that warns anyone accessing the device that unauthorized access is prohibited.
@@ -123,57 +119,83 @@ do copy running-config startup-config
 k. Set the clock on the router.
 
 ```
-clock set 20:00:00 05 mar 2021
+do clock set 20:00:00 05 mar 2021
 ```
 
 **Note**: Use the question mark (**?**) to help with the correct sequence of parameters needed to execute this command.
 
+Summary:
+
+```
+enable
+configure terminal
+hostname R1
+no ip domain-lookup
+enable secret class
+line con 0
+password cisco
+login
+line vty 0 15
+password cisco
+login
+service password-encryption
+banner motd "Unauthorized access is prohibited"
+do copy running-config startup-config
+do clock set 20:00:00 05 mar 2021
+```
+
 Close configuration window
 
-### Step 3: Configure basic
-
-settings for each switch.
+### Step 3: Configure basic settings for each switch.
 
 Open configuration window
 
-a. Console
-into the switch and enable privileged EXEC mode.
+a. Console into the switch and enable privileged EXEC mode.
 
-b. Enter
-configuration mode.
+b. Enter configuration mode.
 
-c. Assign
-a device name to the switch.
+c. Assign a device name to the switch.
 
-d. Disable
-DNS lookup to prevent the router from attempting to translate incorrectly
+d. Disable DNS lookup to prevent the router from attempting to translate incorrectly
 entered commands as though they were host names.
 
-e. Assign **class** as the privileged EXEC
-encrypted password.
+e. Assign **class** as the privileged EXEC encrypted password.
 
-f. Assign **cisco** as the console password and
-enable login.
+f. Assign **cisco** as the console password and enable login.
 
-g. Assign **cisco** as the vty password and enable
-login.
+g. Assign **cisco** as the vty password and enable login.
 
-h. Encrypt
-the plaintext passwords.
+h. Encrypt the plaintext passwords.
 
-i. Create a banner that warns anyone accessing the
-device that unauthorized access is prohibited.
+i. Create a banner that warns anyone accessing the device that unauthorized access is prohibited.
 
 j. Set the clock on the switch.
 
-**Note**: Use the
-question mark (**?**) to help with the
-correct sequence of parameters needed to execute this command.
+**Note**: Use the question mark (**?**) to help with the correct sequence of parameters needed to execute this command.
 
-k. Copy
-the running configuration to the startup configuration.
+k. Copy the running configuration to the startup configuration.
 
 Close configuration window
+
+Summary:
+
+```
+enable
+configure terminal
+hostname S2
+no ip domain-lookup
+enable secret class
+line con 0
+password cisco
+login
+line vty 0 15
+password cisco
+login
+service password-encryption
+banner motd "Unauthorized access is prohibited"
+do copy running-config startup-config
+do clock set 20:00:00 05 mar 2021
+```
 
 ### Step 4: Configure PC hosts.
 
