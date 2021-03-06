@@ -29,13 +29,13 @@ VLAN
 
 [Part 1: Build the Network and Configure Basic Device Settings](readme.md#part-1-build-the-network-and-configure-basic-device-settings)
 
-Part 2: Create VLANs and Assign Switch Ports
+[Part 2: Create VLANs and Assign Switch Ports](readme.md#part-2-create-vlans-and-assign-switch-ports)
 
-Part 3: Configure an 802.1Q Trunk between the Switches
+[Part 3: Configure an 802.1Q Trunk between the Switches](/readme.md#part-3-configure-an-8021q-trunk-between-the-switches)
 
-Part 4: Configure Inter-VLAN Routing on the Router
+[Part 4: Configure Inter-VLAN Routing on the Router](https://github.com/eet1bfwn/OTUS-practice/blob/main/labs/lab02/readme.md#part-4-configure-inter-vlan-routing-on-the-router)
 
-Part 5: Verify Inter-VLAN Routing is working
+[Part 5: Verify Inter-VLAN Routing is working](https://github.com/eet1bfwn/OTUS-practice/blob/main/labs/lab02/readme.md#part-5-verify-inter-vlan-routing-is-working)
 
 ## Part 1: Build the Network and Configure Basic Device Settings
 
