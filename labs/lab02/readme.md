@@ -29,7 +29,7 @@ VLAN
 
 # Objectives
 
-[Part 1: Build the Network and Configure Basic Device Settings](lab02#part-1-build-the-network-and-configure-basic-device-settings)
+[Part 1: Build the Network and Configure Basic Device Settings](readme.md#part-1-build-the-network-and-configure-basic-device-settings)
 
 Part 2: Create VLANs and Assign Switch Ports
 
