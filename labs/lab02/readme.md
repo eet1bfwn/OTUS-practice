@@ -199,7 +199,97 @@ do clock set 20:00:00 05 mar 2021
 
 ### Step 4: Configure PC hosts.
 
+Refer to the Addressing Table for PC host address information.
+
 ### Part 2: Create VLANs and Assign Switch Ports
+
+<style>
+</style>
+
+In Part 2, you will create VLANs, as specified in the
+table above, on both switches. You will then assign the VLANs to the
+appropriate interface. The **show vlan** command is used to verify your configuration settings. Complete the following
+tasks on each switch.
+
+### Step 1: Create VLANs on both switches.
+
+Open configuration window
+
+a. Create and name the required VLANs on each switch from the table above.
+
+b. Configure the management interface and default gateway on each switch using the IP address information in the Addressing Table.
+
+c. Assign all unused ports on both switches to the ParkingLot VLAN, configure them for
+static access mode, and administratively deactivate them.
+
+**Note**:
+The interface range command is helpful to accomplish this task with as few
+commands as necessary.
+
+Summary S1:
+
+```
+vlan 3
+name Management
+vlan 4
+name Operations
+vlan 7
+name ParkingLot
+vlan 8
+name Native
+exit
+interface vlan 3
+ip address 192.168.3.11 255.255.255.0
+exit
+ip default-gateway 192.168.3.1
+
+
+interface range fastEthernet 0/1-24
+switchport mode access
+switchport access vlan 7
+shutdown
+
+interface range gigabitEthernet 0/1-2
+switchport mode access
+switchport access vlan 7
+shutdown
+```
+
+Summary S2:
+
+```
+vlan 3
+name Management
+vlan 4
+name Operations
+vlan 7
+name ParkingLot
+vlan 8
+name Native
+exit
+interface vlan 3
+ip address 192.168.3.12 255.255.255.0
+exit
+ip default-gateway 192.168.3.1
+
+
+interface range fastEthernet 0/1-24
+switchport mode access
+switchport access vlan 7
+shutdown
+
+interface range gigabitEthernet 0/1-2
+switchport mode access
+switchport access vlan 7
+shutdown
+```
+
+### Step 2: Assign VLANs to the correct switch interfaces.
+
+a. Assign used ports to the appropriate VLAN (specified in the VLAN table above) and
+configure them for static access mode. Be sure to do this on both switches
+
+b. Issue the **show vlan** **brief** command and verify that the VLANs are assigned to the correct interfaces.
 
 ### Part 3: Configure an 802.1Q Trunk between the Switches
 
