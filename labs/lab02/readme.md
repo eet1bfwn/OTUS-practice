@@ -2,8 +2,6 @@
 
 ---
 
-
-
 [Исходные данные](https://github.com/eet1bfwn/OTUS-practice/tree/main/labs/lab02#%D0%B8%D1%81%D1%85%D0%BE%D0%B4%D0%BD%D1%8B%D0%B5-%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D0%B5)
 
 [Задачи](https://github.com/eet1bfwn/OTUS-practice/tree/main/labs/lab02#objectives)
@@ -11,8 +9,6 @@
 [Результирующие конфигурации устройств](configs)
 
 ---
-
-
 
 ## Исходные данные
 
@@ -55,7 +51,7 @@
 
 ---
 
-### ### Part 1: Build the Network and Configure Basic Device Settings
+### Part 1: Build the Network and Configure Basic Device Settings
 
 #### Step 1: Cable the network as shown in the topology.
 
