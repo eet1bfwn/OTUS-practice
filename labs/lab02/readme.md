@@ -41,4 +41,4 @@ Part 5: Verify Inter-VLAN Routing is working
 
 
 
-## Part 1: Build the Network and Configure Basic Device Settings
+# Part 1: Build the Network and Configure Basic Device Settings
