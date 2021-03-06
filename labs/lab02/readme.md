@@ -146,7 +146,7 @@ do clock set 20:00:00 05 mar 2021
 
 Close configuration window
 
-### Step 3: Configure basic settings for each switch.
+#### Step 3: Configure basic settings for each switch.
 
 Open configuration window
 
@@ -197,7 +197,7 @@ do copy running-config startup-config
 do clock set 20:00:00 05 mar 2021
 ```
 
-### Step 4: Configure PC hosts.
+#### Step 4: Configure PC hosts.
 
 Refer to the Addressing Table for PC host address information.
 
@@ -211,7 +211,7 @@ table above, on both switches. You will then assign the VLANs to the
 appropriate interface. The **show vlan** command is used to verify your configuration settings. Complete the following
 tasks on each switch.
 
-### Step 1: Create VLANs on both switches.
+#### Step 1: Create VLANs on both switches.
 
 Open configuration window
 
@@ -284,15 +284,130 @@ switchport access vlan 7
 shutdown
 ```
 
-### Step 2: Assign VLANs to the correct switch interfaces.
+#### Step 2: Assign VLANs to the correct switch interfaces.
 
 a. Assign used ports to the appropriate VLAN (specified in the VLAN table above) and
 configure them for static access mode. Be sure to do this on both switches
+
+Summary S1:
+
+```
+interface fastEthernet 0/6
+switchport access vlan 3
+no shutdown
+```
+
+Summary S2:
+
+```
+interface fastEthernet 0/18
+switchport access vlan 4
+no shutdown
+```
 
 b. Issue the **show vlan** **brief** command and verify that the VLANs are assigned to the correct interfaces.
 
 ### Part 3: Configure an 802.1Q Trunk between the Switches
 
+
+
+In Part 3, you will manually configure interface F0/1 as a trunk.
+
+#### Step 1: Manually configure trunk interface F0/1.
+
+Open configuration window
+
+a. Change the switchport mode on interface F0/1 to force trunking. Make sure to do this on both switches.
+
+b. As a part of the trunk configuration, set the native VLAN to 8 on both switches.
+You may see error messages temporarily while the two interfaces are configured
+for different native VLANs.
+
+c. As another part of trunk configuration, specify that VLANs 3, 4, and 8 are only
+allowed to cross the trunk.
+
+d. Issue the **show interfaces trunk** command to
+verify trunking ports, the Native VLAN and allowed VLANs across the trunk.
+
+Summary S1 and S2:
+
+```
+interface f0/1
+switchport mode trunk
+switchport trunk native vlan 8
+switchport trunk allowed vlan 3,4,8
+no shutdown
+```
+
+#### Step 2: Manually configure S1’s trunk interface F0/5
+
+a. Configure the F0/5 on S1 with the same trunk parameters as F0/1. This is the trunk to the router.
+
+b. Save the running configuration to the startup configuration file on S1 and S2.
+
+c. Issue the **show interfaces trunk** command to verify trunking.
+
+Summary S1:
+
+```
+interface f0/5
+switchport mode trunk
+switchport trunk native vlan 8
+switchport trunk allowed vlan 3,4,8
+no shutdown
+
+
+```
+
+#### Question:
+
+Why does F0/5 not appear in the list of trunks? - Потому что с другой стороны порт погашен.
+
 ### Part 4: Configure Inter-VLAN Routing on the Router
 
+a. Activate interface G0/0/1 on the router.
+
+b. Configure sub-interfaces for each VLAN as specified in the IP addressing table. All sub-interfaces use 802.1Q encapsulation. Ensure the sub-interface for the native VLAN does not have an IP address assigned. Include a description for each sub-interface.
+
+c. Use the **show ip interface brief** command to verify the sub-interfaces are operational.
+
+Summary R1:
+
+```
+interface g0/0/1
+no shutdown
+interface g0/0/1.3
+encapsulation dot1q 3
+ip address 192.168.3.1 255.255.255.0
+interface g0/0/1.4
+encapsulation dot1q 4
+ip address 192.168.4.1 255.255.255.0
+interface g0/0/1.8
+encapsulation dot1q 8 native
+
+```
+
 ### Part 5: Verify Inter-VLAN Routing is working
+
+#### Step 1: Complete the following tests from PC-A. All should be successful.
+
+**Note**: You may have to disable the PC firewall for pings to be successful.
+
+a. Ping from PC-A to its default gateway.
+
+b. Ping from PC-A to PC-B
+
+c. Ping from PC-A to S2
+
+#### Step 2: Complete the following test from PC-B.
+
+From the command prompt on PC-B, issue the tracert command
+to the address of PC-A.
+
+#### Question:
+
+What intermediate IP addresses are shown in the results?
+
+```
+
+```
