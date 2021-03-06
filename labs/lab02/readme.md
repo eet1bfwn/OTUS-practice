@@ -39,7 +39,143 @@
 
 [Part 5: Verify Inter-VLAN Routing is working](https://github.com/eet1bfwn/OTUS-practice/blob/main/labs/lab02/readme.md#part-5-verify-inter-vlan-routing-is-working)
 
+---
+
+
+
 ### Part 1: Build the Network and Configure Basic Device Settings
+
+
+
+#### Step 1: Cable the network as shown in the topology.
+
+Attach the devices as shown in the topology diagram, and cable as necessary.
+
+#### Step 2: Configure basic settings for the router.
+
+Open configuration window
+
+a. Console into the router and enable privileged EXEC mode.
+
+```
+enable
+```
+
+b. Enter configuration mode.
+
+```
+configure terminal
+```
+
+c. Assign a device name to the router.
+
+```
+hostname R1
+```
+
+d. Disable DNS lookup to prevent the router from attempting to translate incorrectly
+entered commands as though they were host names.
+
+```
+no ip domain-lookup
+```
+
+e. Assign **class** as the privileged EXEC encrypted password.
+
+```
+enable secret class
+```
+
+f. Assign **cisco** as the console password and enable login.
+
+```
+line con 0
+password cisco
+login
+```
+
+g. Assign **cisco** as the VTY password and enable login.
+
+```
+line vty 0 15
+password cisco
+login
+```
+
+h. Encrypt the plaintext passwords.
+
+```
+service password encryption
+```
+
+i. Create a banner that warns anyone accessing the device that unauthorized access is prohibited.
+
+```
+banner motd "Unauthorized access is prohibited"
+```
+
+j. Save the running configuration to the startup configuration file.
+
+```
+do copy running-config startup-config
+```
+
+k. Set the clock on the router.
+
+```
+clock set 20:00:00 05 mar 2021
+```
+
+**Note**: Use the question mark (**?**) to help with the correct sequence of parameters needed to execute this command.
+
+Close configuration window
+
+### Step 3: Configure basic
+
+settings for each switch.
+
+Open configuration window
+
+a. Console
+into the switch and enable privileged EXEC mode.
+
+b. Enter
+configuration mode.
+
+c. Assign
+a device name to the switch.
+
+d. Disable
+DNS lookup to prevent the router from attempting to translate incorrectly
+entered commands as though they were host names.
+
+e. Assign **class** as the privileged EXEC
+encrypted password.
+
+f. Assign **cisco** as the console password and
+enable login.
+
+g. Assign **cisco** as the vty password and enable
+login.
+
+h. Encrypt
+the plaintext passwords.
+
+i. Create a banner that warns anyone accessing the
+device that unauthorized access is prohibited.
+
+j. Set the clock on the switch.
+
+**Note**: Use the
+question mark (**?**) to help with the
+correct sequence of parameters needed to execute this command.
+
+k. Copy
+the running configuration to the startup configuration.
+
+Close configuration window
+
+### Step 4: Configure PC hosts.
 
 ### Part 2: Create VLANs and Assign Switch Ports
 
