@@ -203,9 +203,6 @@ Refer to the Addressing Table for PC host address information.
 
 ### Part 2: Create VLANs and Assign Switch Ports
 
-<style>
-</style>
-
 In Part 2, you will create VLANs, as specified in the
 table above, on both switches. You will then assign the VLANs to the
 appropriate interface. The **show vlan** command is used to verify your configuration settings. Complete the following
@@ -309,8 +306,6 @@ b. Issue the **show vlan** **brief** command and verify that the VLANs are assig
 
 ### Part 3: Configure an 802.1Q Trunk between the Switches
 
-
-
 In Part 3, you will manually configure interface F0/1 as a trunk.
 
 #### Step 1: Manually configure trunk interface F0/1.
@@ -355,8 +350,6 @@ switchport mode trunk
 switchport trunk native vlan 8
 switchport trunk allowed vlan 3,4,8
 no shutdown
-
-
 ```
 
 #### Question:
@@ -384,7 +377,6 @@ encapsulation dot1q 4
 ip address 192.168.4.1 255.255.255.0
 interface g0/0/1.8
 encapsulation dot1q 8 native
-
 ```
 
 ### Part 5: Verify Inter-VLAN Routing is working
@@ -409,5 +401,12 @@ to the address of PC-A.
 What intermediate IP addresses are shown in the results?
 
 ```
+C:\>tracert 192.168.3.3
 
+Tracing route to 192.168.3.3 over a maximum of 30 hops: 
+
+  1   0 ms      1 ms      1 ms      192.168.4.1
+  2   0 ms      0 ms      0 ms      192.168.3.3
+
+Trace complete.
 ```
