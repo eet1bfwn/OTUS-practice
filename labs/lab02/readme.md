@@ -1,10 +1,12 @@
 # Лабораторная работа "VLAN и маршрутизация между VLAN"
 
-Топология:
+## Исходные данные
+
+### Топология
 
 ![](screenshots/2021-03-06-18-27-22-image.png)
 
- Адресация:
+### Адресация
 
 | Device | Interface | IP Address   | Subnet Mask   | Default Gateway |
 | ------ | --------- | ------------ | ------------- | --------------- |
@@ -16,7 +18,7 @@
 | PC-A   | NIC       | 192.168.3.3  | 255.255.255.0 | 192.168.3.1     |
 | PC-B   | NIC       | 192.168.4.3  | 255.255.255.0 | 192.168.4.1     |
 
-VLAN 
+### VLAN
 
 | VLAN | Name       | Interface Assigned                                        |
 | ---- | ---------- | --------------------------------------------------------- |
@@ -25,7 +27,7 @@ VLAN
 | 7    | ParkingLot | S1: F0/2-4, F0/7-24, G0/1-2 S2: F0/2-17, F0/19-24, G0/1-2 |
 | 8    | Native     | N/A                                                       |
 
-# Objectives
+## Objectives
 
 [Part 1: Build the Network and Configure Basic Device Settings](readme.md#part-1-build-the-network-and-configure-basic-device-settings)
 
@@ -37,12 +39,12 @@ VLAN
 
 [Part 5: Verify Inter-VLAN Routing is working](https://github.com/eet1bfwn/OTUS-practice/blob/main/labs/lab02/readme.md#part-5-verify-inter-vlan-routing-is-working)
 
-## Part 1: Build the Network and Configure Basic Device Settings
+### Part 1: Build the Network and Configure Basic Device Settings
 
-## Part 2: Create VLANs and Assign Switch Ports
+### Part 2: Create VLANs and Assign Switch Ports
 
-## Part 3: Configure an 802.1Q Trunk between the Switches
+### Part 3: Configure an 802.1Q Trunk between the Switches
 
-## Part 4: Configure Inter-VLAN Routing on the Router
+### Part 4: Configure Inter-VLAN Routing on the Router
 
-## Part 5: Verify Inter-VLAN Routing is working
+### Part 5: Verify Inter-VLAN Routing is working
