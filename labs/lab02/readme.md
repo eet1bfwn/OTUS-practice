@@ -1,5 +1,3 @@
-
-
 # Развертывание коммутируемой сети с резервными каналами
 
 Исходные данные
@@ -7,8 +5,6 @@
 Задачи
 
 Результирующие конфигурации устройств
-
-
 
 ## Исходные данные
 
@@ -32,8 +28,6 @@
 сети и основные параметры маршрутизаторов.
 
 **Шаг 1: Создайте сеть согласно топологии.**
-
-
 
 Подключите устройства, как показано в топологии,
 и подсоедините необходимые кабели.
@@ -78,7 +72,7 @@ line console 0
 logging synchronous
 password cisco
 login
-line tty 0 15
+line vty 0 15
 password cisco
 login
 banner motd #Authorized access only!#
@@ -86,8 +80,6 @@ interface vlan 1
 ip address 192.168.1.1 255.255.255.0
 no shutdown
 ```
-
-
 
 ```
 enable
@@ -99,7 +91,7 @@ line console 0
 logging synchronous
 password cisco
 login
-line tty 0 15
+line vty 0 15
 password cisco
 login
 banner motd #Authorized access only!#
@@ -107,8 +99,6 @@ interface vlan 1
 ip address 192.168.1.2 255.255.255.0
 no shutdown
 ```
-
-
 
 ```
 enable
@@ -120,7 +110,7 @@ line console 0
 logging synchronous
 password cisco
 login
-line tty 0 15
+line vty 0 15
 password cisco
 login
 banner motd #Authorized access only!#
