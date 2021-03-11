@@ -286,7 +286,6 @@ F0/4).
 
 S3(config)#interface fa0/2
 
-
 S3(config-if)#no spanning-tree cost 
 
 ### Часть 4: Наблюдение за процессом выбора протоколом STP порта, исходя из приоритета портов
