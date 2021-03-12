@@ -118,6 +118,7 @@ banner motd #Authorized access only!#
 interface vlan 1
 ip address 192.168.1.2 255.255.255.0
 no shutdown
+end
 copy running-config startup-config
 ```
 
@@ -138,6 +139,8 @@ banner motd #Authorized access only!#
 interface vlan 1
 ip address 192.168.1.3 255.255.255.0
 no shutdown
+end
+copy running-config startup-config
 ```
 
 **Шаг 4: Проверьте связь.**
