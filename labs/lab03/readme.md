@@ -244,7 +244,20 @@ Summary R1:
 
 ```
 int gi0/0/1.100
-ip addr 
+encapsulation dot1Q 100
+description clients
+ip addr 192.168.1.1 255.255.255.192
+
+int gi0/0/1.200
+encapsulation dot1Q 200
+description clients
+ip addr 192.168.1.65 255.255.255.224
+
+int gi0/0/1.1000
+encapsulation dot1Q 1000 native
+
+int gi0/0/1
+no shut
 ```
 
 ### Step 5: Configure G0/0/1 on R2,
