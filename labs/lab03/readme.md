@@ -104,8 +104,6 @@ configure basic settings on the PC hosts and switches.
 
 ### Step 1: Establish an addressing scheme
 
-
-
 ![](screenshots/2021-03-24-22-58-29-image.png)
 
 Subnet the network 192.168.1.0/24 to meet the following
@@ -144,8 +142,6 @@ enter the associated default gateway.
 VLAN 200 - management. Поэтому делаем не так, как сказано - назначаем 
 S1 VLAN 200 адрес, а не VLAN 1. 
 ```
-
-
 
 c. One
 subnet, “Subnet C”, supporting 12 hosts (the client network at R2).
@@ -190,8 +186,6 @@ h. Save the running configuration to the startup configuration file.
 i. Set the clock on the router to today’s time and date.
 
 **Note**: Use the question mark (**?**) to help with the correct sequence of parameters needed to execute this command.
-
-
 
 Summary R1
 
@@ -245,8 +239,6 @@ for the native VLAN does not have an IP address assigned. Include a description
 for each sub-interface.
 
 c. Verify the sub-interfaces are operational.
-
-
 
 Summary R1:
 
