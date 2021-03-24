@@ -16,16 +16,16 @@
 
 | Device | Interface   | IP Address   | Subnet Mask     | Default Gateway |
 | ------ | ----------- | ------------ | --------------- | --------------- |
-| R1     | G0/0/0      | 10.0.0.1     | 255.255.255.252 | N/A             |
+| R1     | G0/0/0      | 10.0.0.1     | 255.255.255.252 | 10.0.0.2        |
 | R1     | G0/0/1      |              |                 | N/A             |
 | R1     | G0/0/1.100  | 192.168.1.1  | 255.255.255.192 | N/A             |
 | R1     | G0/0/1.200  | 192.168.1.65 | 255.255.255.224 | N/A             |
 | R1     | G0/0/1.1000 | N/A          | N/A             | N/A             |
-| R2     | G0/0/0      | 10.0.0.2     | 255.255.255.252 | N/A             |
+| R2     | G0/0/0      | 10.0.0.2     | 255.255.255.252 | 10.0.0.1        |
 | R2     | G0/0/1      | 192.168.1.97 | 255.255.255.240 | N/A             |
 | S1     | VLAN 1      | -            | -               |                 |
 | S1     | VLAN 200    | 192.168.1.66 | 255.255.255.224 | 192.168.1.65    |
-| S2     | VLAN 1      | blank        | blank           | blank           |
+| S2     | VLAN 1      | 192.168.1.98 | 255.255.255.240 | 192.168.1.97    |
 | PC-A   | NIC         | DHCP         | DHCP            | DHCP            |
 | PC-B   | NIC         | DHCP         | DHCP            | DHCP            |
 
@@ -260,149 +260,229 @@ int gi0/0/1
 no shut
 ```
 
-### Step 5: Configure G0/0/1 on R2,
+### Step 5: Configure G0/0/1 on R2, then G0/0/0 and static routing for both routers
 
-then G0/0/0 and static routing for both routers
+a. Configure G0/0/1 on R2 with the first IP address of Subnet C you calculated earlier.
 
-a. Configure
-G0/0/1 on R2 with the first IP address of Subnet C you calculated earlier.
+b. Configure interface G0/0/0 for each router based on the IP Addressing table above.
 
-b. Configure
-interface G0/0/0 for each router based on the IP Addressing table above.
+c. Configure a default route on each router pointed to the IP address of G0/0/0 on the other router.
 
-c. Configure
-a default route on each router pointed to the IP address of G0/0/0 on the other
-router.
+d. Verify static routing is working by pinging R2’s G0/0/1 address from R1.
 
-d. Verify
-static routing is working by pinging R2’s G0/0/1 address from R1.
+![](screenshots/2021-03-24-23-58-42-image.png)
 
-e. Save
-the running configuration to the startup configuration file.
+e. Save the running configuration to the startup configuration file.
 
 Close configuration window
 
-### Step 6: Configure basic
+Summary R2:
 
-settings for each switch.
+```
+int gi0/0/1
+ip address 192.168.1.97 255.255.255.240
+no shutdown
 
-a. Assign
-a device name to the switch.
+int gi0/0/0
+ip address 10.0.0.2 255.255.255.252
+no shut
 
-Open configuration window
+exit 
+ip route 0.0.0.0 0.0.0.0 10.0.0.1
+copy running-config startup-config
+```
 
-b. Disable
-DNS lookup to prevent the router from attempting to translate incorrectly
-entered commands as though they were host names.
+Summary R1:
 
-c. Assign **class** as the privileged EXEC
-encrypted password.
+```
+int gi0/0/0
+ip address 10.0.0.1 255.255.255.252
+no shut
+exit 
+ip route 0.0.0.0 0.0.0.0 10.0.0.2
+copy running-config startup-config
+```
 
-d. Assign **cisco** as the console password and
-enable login.
+### Step 6: Configure basic settings for each switch.
 
-e. Assign **cisco** as the VTY password and enable
-login.
+a. Assign a device name to the switch.
 
-f. Encrypt
-the plaintext passwords.
+b. Disable DNS lookup to prevent the router from attempting to translate incorrectly entered commands as though they were host names.
 
-g. Create
-a banner that warns anyone accessing the device that unauthorized access is
+c. Assign **class** as the privileged EXEC encrypted password.
+
+d. Assign **cisco** as the console password and enable login.
+
+e. Assign **cisco** as the VTY password and enable login.
+
+f. Encrypt the plaintext passwords.
+
+g. Create a banner that warns anyone accessing the device that unauthorized access is
 prohibited.
 
-h. Save
-the running configuration to the startup configuration file.
+h. Save the running configuration to the startup configuration file.
 
-i. Set the clock on the switch to today’s time and
-date.
+i. Set the clock on the switch to today’s time and date.
 
-**Note**: Use the
-question mark (**?**) to help with the
-correct sequence of parameters needed to execute this command.
+**Note**: Use the question mark (**?**) to help with the correct sequence of parameters needed to execute this command.
 
-j. Copy the running configuration to the startup
-configuration.
+j. Copy the running configuration to the startup configuration.
+
+Summary S1:
+
+```
+hostname S1
+no ip domain-lookup
+enable secret class
+line con 0
+password cisco
+login
+line vty 0 15
+password cisco
+login
+exit
+service password-encryption
+banner motd "Unauthorized access is prohibited"
+end
+copy running-config startup-config
+```
+
+Summary S2:
+
+```
+hostname S2
+no ip domain-lookup
+enable secret class
+line con 0
+password cisco
+login
+line vty 0 15
+password cisco
+login
+exit
+service password-encryption
+banner motd "Unauthorized access is prohibited"
+end
+copy running-config startup-config
+```
 
 ### Step 7: Create VLANs on S1.
 
 **Note**: S2 is only configured with basic settings.
 
-a. Create
-and name the required VLANs on switch 1 from the table above.
+a. Create and name the required VLANs on switch 1 from the table above.
 
-b. Configure
-and activate the management interface on S1 (VLAN 200) using the second IP
-address from the subnet calculated earlier. Additionally, set the default
+b. Configure and activate the management interface on S1 (VLAN 200) using the second IP address from the subnet calculated earlier. Additionally, set the default
 gateway on S1.
 
-c. Configure
-and activate the management interface on S2 (VLAN 1) using the second IP
+c. Configure and activate the management interface on S2 (VLAN 1) using the second IP
 address from the subnet calculated earlier. Additionally, set the default
 gateway on S2
 
-d. Assign
-all unused ports on S1 to the Parking_Lot VLAN, configure them for static
+d. Assign all unused ports on S1 to the Parking_Lot VLAN, configure them for static
 access mode, and administratively deactivate them. On S2, administratively
 deactivate all the unused ports.
 
-**Note**: The interface range command is helpful to
-accomplish this task with as few commands as necessary.
+**Note**: The interface range command is helpful to accomplish this task with as few commands as necessary.
 
-Close configuration window
 
-Open configuration window
 
-Close configuration window
+Summary S1:
 
-### Step 8: Assign VLANs to the
+```
+vlan 100
+name Clients
+vlan 200
+name Management
+vlan 999
+name Parking_Lot
+vlan 1000
+name Native
+int vlan 200
+no shutdown
+ip address 192.168.1.66 255.255.255.224
+exit
+ip default-gateway 192.168.1.65
+int range F0/1-4, F0/7-24, G0/1-2
+switchport mode access
+switchport access vlan 999
+shutdown
 
-correct switch interfaces.
 
-a. Assign
-used ports to the appropriate VLAN (specified in the VLAN table above) and
+```
+
+Summary S2:
+
+```
+int vlan 1
+no shutdown
+ip addr 192.168.1.98 255.255.255.240
+exit
+ip default-gateway 192.168.1.97
+
+```
+
+### Step 8: Assign VLANs to the correct switch interfaces.
+
+a. Assign used ports to the appropriate VLAN (specified in the VLAN table above) and
 configure them for static access mode.
 
-Open configuration window
 
-b. Verify
-that the VLANs are assigned to the correct interfaces.
+
+b. Verify that the VLANs are assigned to the correct interfaces.
+
+Summary S1:
+
+```
+ int f0/6
+ switchport mode access
+ switchport access vlan 100
+ end
+ show vlan
+```
 
 #### Question:
 
-Why is interface F0/5 listed under
-VLAN 1?
+Why is interface F0/5 listed under VLAN 1?
 
-Type your answers here.
+```
+VLAN 1 - vlan по-умолчанию, в нем находятся все порты. Порт F0/5 мы не
+переводили в другой vlan.
+```
 
-### Step 9: Manually configure S1’s
+### Step 9: Manually configure S1’s interface F0/5 as an 802.1Q trunk.
 
-interface F0/5 as an 802.1Q trunk.
+a. Change the switchport mode on the interface to force trunking.
 
-a. Change
-the switchport mode on the interface to force trunking.
+b. As a part of the trunk configuration, set the native VLAN to 1000.
 
-b. As
-a part of the trunk configuration, set the native VLAN to 1000.
-
-c. As
-another part of trunk configuration, specify that VLANs 100, 200, and 1000 are
+c. As another part of trunk configuration, specify that VLANs 100, 200, and 1000 are
 allowed to cross the trunk.
 
-d. Save
-the running configuration to the startup configuration file.
+d. Save the running configuration to the startup configuration file.
 
-e. Verify
-trunking status.
+e. Verify trunking status.
+
+Summary S1:
+
+```
+int fa0/5
+switchport mode trunk
+switchport trunk native vlan 1000
+switchport trunk allowed vlan 100,200,1000
+end
+copy running-config startup-config
+show interfaces trunk
+```
 
 #### Question:
 
-At this point, what IP address would the PC’s have if they
-were connected to the network using DHCP?
+At this point, what IP address would the PC’s have if they were connected to the network using DHCP?
 
-Type your answers here.
-
-Close configuration window
+```
+PC-A - находится в Vlan 100. Этот Vlan приходит на интерфейс R1 G0/0/1.
+Для PC-A адресация должна быть в той же сети 
+```
 
 ## Part 2: Configure and verify
 
