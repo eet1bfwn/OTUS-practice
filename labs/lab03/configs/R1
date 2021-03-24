@@ -1,0 +1,120 @@
+R1#sh startup-config 
+Using 1750 bytes
+!
+version 16.6.4
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+service password-encryption
+!
+hostname R1
+!
+!
+!
+enable secret 5 $1$mERr$9cTjUIEqNGurQiFU.ZeCi1
+!
+!
+ip dhcp excluded-address 192.168.1.1 192.168.1.5
+ip dhcp excluded-address 192.168.1.65 192.168.1.69
+ip dhcp excluded-address 192.168.1.97 192.168.1.101
+!
+ip dhcp pool Clients
+ network 192.168.1.0 255.255.255.192
+ default-router 192.168.1.1
+ domain-name ccna-lab.com
+ip dhcp pool Management
+ network 192.168.1.64 255.255.255.224
+ default-router 192.168.1.65
+ domain-name ccna-lab.com
+ip dhcp pool R2_Client_LAN
+ network 192.168.1.96 255.255.255.240
+ default-router 192.168.1.97
+ domain-name wr
+!
+!
+!
+ip cef
+no ipv6 cef
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+no ip domain-lookup
+!
+!
+spanning-tree mode pvst
+!
+!
+!
+!
+!
+!
+interface GigabitEthernet0/0/0
+ ip address 10.0.0.1 255.255.255.252
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/0/1
+ no ip address
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/0/1.100
+ description clients
+ encapsulation dot1Q 100
+ ip address 192.168.1.1 255.255.255.192
+!
+interface GigabitEthernet0/0/1.200
+ description clients
+ encapsulation dot1Q 200
+ ip address 192.168.1.65 255.255.255.224
+!
+interface GigabitEthernet0/0/1.1000
+ encapsulation dot1Q 1000 native
+ no ip address
+!
+interface GigabitEthernet0/0/2
+ no ip address
+ duplex auto
+ speed auto
+ shutdown
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+ip default-gateway 10.0.0.2
+ip classless
+ip route 0.0.0.0 0.0.0.0 10.0.0.2 
+!
+ip flow-export version 9
+!
+!
+!
+banner motd ^CUnauthorized access is prohibited^C
+!
+!
+!
+!
+!
+line con 0
+ password 7 0822455D0A16
+ login
+!
+line aux 0
+!
+line vty 0 4
+ password 7 0822455D0A16
+ login
+line vty 5 15
+ password 7 0822455D0A16
+ login
+!
+!
+!
+end

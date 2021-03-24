@@ -385,8 +385,6 @@ deactivate all the unused ports.
 
 **Note**: The interface range command is helpful to accomplish this task with as few commands as necessary.
 
-
-
 Summary S1:
 
 ```
@@ -407,8 +405,6 @@ int range F0/1-4, F0/7-24, G0/1-2
 switchport mode access
 switchport access vlan 999
 shutdown
-
-
 ```
 
 Summary S2:
@@ -419,15 +415,12 @@ no shutdown
 ip addr 192.168.1.98 255.255.255.240
 exit
 ip default-gateway 192.168.1.97
-
 ```
 
 ### Step 8: Assign VLANs to the correct switch interfaces.
 
 a. Assign used ports to the appropriate VLAN (specified in the VLAN table above) and
 configure them for static access mode.
-
-
 
 b. Verify that the VLANs are assigned to the correct interfaces.
 
@@ -481,100 +474,109 @@ At this point, what IP address would the PC’s have if they were connected to t
 
 ```
 PC-A - находится в Vlan 100. Этот Vlan приходит на интерфейс R1 G0/0/1.
-Для PC-A адресация должна быть в той же сети 
+Для PC-A адресация должна быть в той же сети  - 192.168.1.0/26.
+Аналогичная логика для PC-B - 192.168.1.96/28
 ```
 
-## Part 2: Configure and verify
+## Part 2: Configure and verify two DHCPv4 Servers on R1
 
-two DHCPv4 Servers on R1
+In Part 2, you will configure and verify a DHCPv4 Server on R1. The DHCPv4 server will service two subnets, Subnet A and Subnet C.
 
-In Part 2, you will configure and verify a DHCPv4 Server
-on R1. The DHCPv4 server will service two subnets, Subnet A and Subnet C.
+### Step 1: Configure R1 with DHCPv4 pools for the two supported subnets. Only the DHCP Pool for subnet A is
 
-### Step 1: Configure R1 with
+a. Exclude the first five useable addresses from each address pool.
 
-DHCPv4 pools for the two supported subnets. Only the DHCP Pool for subnet A is
-given below
+b. Create the DHCP pool (Use a unique name for each pool).
 
-a. Exclude
-the first five useable addresses from each address pool.
+c. Specify the network that this DHCP server is supporting.
 
-Open configuration window
+d. Configure the domain name as ccna-lab.com
 
-b. Create
-the DHCP pool (Use a unique name for each pool).
+e. Configure the appropriate default gateway for each DHCP pool.
 
-c. Specify
-the network that this DHCP server is supporting.
+f. Configure the lease time for 2 days 12 hours and 30 minutes.
 
-d. Configure
-the domain name as ccna-lab.com
-
-e. Configure
-the appropriate default gateway for each DHCP pool.
-
-f. Configure
-the lease time for 2 days 12 hours and 30 minutes.
-
-g. Next,
-configure the second DHCPv4 Pool using the pool name R2_Client_LAN and the
+g. Next, configure the second DHCPv4 Pool using the pool name R2_Client_LAN and the
 calculated network, default-router and use the same domain name and lease time
 from the previous DHCP pool.
+
+Summary R1:
+
+```
+ip dhcp excluded-address 192.168.1.1 192.168.1.5
+ip dhcp excluded-address 192.168.1.65 192.168.1.69
+ip dhcp excluded-address 192.168.1.97 192.168.1.101
+
+ip dhcp pool Clients
+network 192.168.1.0 255.255.255.192
+domain-name ccna-lab.com
+default-router 192.168.1.1
+lease 2 12 30 
+
+ip dhcp pool Management
+network 192.168.1.64 255.255.255.224
+domain-name ccna-lab.com
+default-router 192.168.1.65
+lease 2 12 30 
+
+ip dhcp pool R2_Client_LAN
+network 192.168.1.96 255.255.255.240
+domain-name ccna-lab.com
+default-router 192.168.1.97
+lease 2 12 30
+
+
+```
 
 ### Step 2: Save your configuration
 
 Save the running configuration to the startup
 configuration file.
 
-Close configuration window
+### Step 3: Verify the DHCPv4 Server configuration
 
-### Step 3: Verify the DHCPv4
+a. Issue the command **show ip dhcp pool** to examine the pool details.
 
-Server configuration
+![](screenshots/2021-03-25-00-57-17-image.png)
 
-a. Issue
-the command **show ip dhcp pool** to examine the pool details.
-
-b. Issue
-the command **show ip dhcp bindings** to examine established DHCP address
+b. Issue the command **show ip dhcp bindings** to examine established DHCP address
 assignments.
 
-c. Issue
-the command **show ip dhcp server** **statistics** to examine DHCP messages.
+![](screenshots/2021-03-25-00-58-19-image.png)
 
-### Step 4: Attempt to acquire an
+c. Issue the command **show ip dhcp server** **statistics** to examine DHCP messages.
 
-IP address from DHCP on PC-A
+```
+PacketTracer не умеет задавать время аренды
+```
 
-a. Open
-a command prompt on PC-A and issue the command **ipconfig /renew**.
+# 
 
-b. Once
-the renewal process is complete, issue the command **ipconfig** to view the
+### Step 4: Attempt to acquire an IP address from DHCP on PC-A
+
+a. Open a command prompt on PC-A and issue the command **ipconfig /renew**.
+
+b. Once the renewal process is complete, issue the command **ipconfig** to view the
 new IP information.
 
-c. Test
-connectivity by pinging R1’s G0/0/1 interface IP address.
+c. Test connectivity by pinging R1’s G0/0/1 interface IP address.
 
-## Part 3: Configure and verify a
+![](screenshots/2021-03-25-00-59-58-image.png)
 
-DHCP Relay on R2
+## Part 3: Configure and verify a DHCP Relay on R2
 
-In Part 3, you will configure R2 to relay DHCP requests
-from the local area network on interface G0/0/1 to the DHCP server (R1).
+In Part 3, you will configure R2 to relay DHCP requests from the local area network on interface G0/0/1 to the DHCP server (R1).
 
-### Step 1: Configure R2 as a DHCP
+### Step 1: Configure R2 as a DHCP relay agent for the LAN on G0/0/1
 
-relay agent for the LAN on G0/0/1
+a. Configure the **ip helper-address** command on G0/0/1 specifying R1’s G0/0/0 IP address.
 
-a. Configure
-the **ip helper-address** command on
-G0/0/1 specifying R1’s G0/0/0 IP address.
+```
+int gi0/0/1
+ip helper-address 192.168.1.1
+```
 
-Open configuration window
-
-b. Save
-your configuration.
+b. Save your configuration.
 
 Close configuration window
 
@@ -592,11 +594,19 @@ new IP information.
 c. Test
 connectivity by pinging R1’s G0/0/1 interface IP address.
 
+![](screenshots/2021-03-25-01-08-10-image.png)
+
 d. Issue
 the **show ip dhcp binding** on R1 to
 verify DHCP bindings.
 
+![](screenshots/2021-03-25-01-08-48-image.png)
+
+
+
 e. Issue
 the **show ip dhcp server statistics** on R1 and R2 to verify DHCP messages.
 
-End of document
+```
+PacketTracer не знает таких команд
+```
