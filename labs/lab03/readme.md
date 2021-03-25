@@ -524,8 +524,6 @@ network 192.168.1.96 255.255.255.240
 domain-name ccna-lab.com
 default-router 192.168.1.97
 lease 2 12 30
-
-
 ```
 
 ### Step 2: Save your configuration
@@ -601,8 +599,6 @@ the **show ip dhcp binding** on R1 to
 verify DHCP bindings.
 
 ![](screenshots/2021-03-25-01-08-48-image.png)
-
-
 
 e. Issue
 the **show ip dhcp server statistics** on R1 and R2 to verify DHCP messages.
