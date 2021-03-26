@@ -385,8 +385,6 @@ deactivate all the unused ports.
 
 **Note**: The interface range command is helpful to accomplish this task with as few commands as necessary.
 
-
-
 ```
 Вопрос - configure them for static access mode решается
 через команду switcport mode access ?
@@ -620,10 +618,6 @@ the **show ip dhcp server statistics** on R1 and R2 to verify DHCP messages.
 PacketTracer не знает таких команд
 ```
 
-
-
-
-
 # Configure DHCPv6
 
 # Topology
@@ -740,13 +734,7 @@ configure basic settings on the PC hosts and switches.
 Attach the devices as shown in the topology diagram, and
 cable as necessary.
 
-
-
-
-
 ### Step 2: Configure basic
-
-
 
 ```
 Настройки выполнены при конфигурировании DHCPv4
@@ -823,13 +811,9 @@ prohibited.
 h. Enable
 IPv6 Routing
 
-
-
 ```
 ipv6 unicast-routing
 ```
-
-
 
 i. Save the running configuration to the startup
 configuration file.
@@ -859,8 +843,6 @@ routing is working by pinging R2’s G0/0/1 address from R1
 
 ![](screenshots/2021-03-25-23-57-37-image.png)
 
-
-
 d. Save
 the running configuration to the startup configuration file.
 
@@ -875,8 +857,6 @@ ipv6 address 2001:db8:acad:1::1/64
 ipv6 address fe80::1 link-local
 exit
 ipv6 route ::/0 gigabitEthernet 0/0/0 fe80::2
-
-
 ```
 
 Summary R2:
@@ -926,8 +906,6 @@ a. Issue
 the command **ipconfig /all** on PC-A
 and take a look at the output.
 
-
-
 b. Notice
 that there is no Primary DNS suffix. Also note that the DNS server addresses
 provided are “site local anycast” addresses, and not unicast addresses, as
@@ -938,18 +916,11 @@ would be expected.
 a. Create an IPv6 DHCP pool on R1 named R1-STATELESS. As a part of that pool, assign the
 DNS server address as 2001:db8:acad::1 and the domain name as stateless.com.
 
-
-
 ```
 ipv6 dhcp pool R1-STATELESS
 dns-server 2001:db8:acad::254
 domain-name STATELESS.com
-
-
-
 ```
-
-
 
 b. Configure
 the G0/0/1 interface on R1 to provide the OTHER config flag to the R1 LAN, and
@@ -959,9 +930,6 @@ specify the DHCP pool you just created as the DHCP resource for this interface.
 int gi0/0/1
 ipv6 nd other-config-flag
 ipv6 dhcp server R1-STATELESS
-
-
-
 ```
 
 c. Save
@@ -1000,7 +968,6 @@ address prefix 2001:db8:acad:3:aaa::/80
 dns-server 2001:db8:acad::254
 
 domain-name STATEFUL.com
-
 ```
 
 b. Assign
@@ -1009,7 +976,6 @@ the DHCPv6 pool you just created to interface g0/0/0 on R1.
 ```
 interface g0/0/0
 ipv6 dhcp server R2-STATEFUL
-
 ```
 
 Close configuration window
@@ -1022,8 +988,6 @@ R2, allowing PC-B to receive an IPv6 Address.
 ### Step 1: Power on PC-B and
 
 examine the SLAAC address that it generates.
-
-
 
 ![](screenshots/2021-03-26-01-14-54-image.png)
 
@@ -1065,8 +1029,6 @@ PC-B.
 b. Open
 a command prompt on PC-B and issue the command **ipconfig /all** and examine
 the output to see the results of the DHCPv6 relay operation.
-
-
 
 c. Test
 connectivity by pinging R1’s G0/0/1 interface IP address.
