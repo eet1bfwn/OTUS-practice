@@ -624,26 +624,33 @@ PacketTracer не знает таких команд
 
 ![](screenshots/2021-03-25-23-36-11-image.png)
 
+
+
+
+
+![](screenshots/2021-03-27-23-28-35-image.png)
+
 # Addressing Table
 
 <style>
 </style>
 
-| Device | Interface | IPv6 Address           |
-| ------ | --------- | ---------------------- |
-| R1     | G0/0/0    | 2001:db8:acad:2::1 /64 |
-| R1     | G0/0/0    | fe80::1                |
-| R1     | G0/0/1    | 2001:db8:acad:1::1/64  |
-| R1     | G0/0/1    | fe80::1                |
-| R2     | G0/0/0    | 2001:db8:acad:2::2/64  |
-| R2     | G0/0/0    | fe80::2                |
-| R2     | G0/0/1    | 2001:db8:acad:3::1 /64 |
-| R2     | G0/0/1    | fe80::1                |
-| PC-A   | NIC       | DHCP                   |
-| PC-B   | NIC       | DHCP                   |
+| Device | IntTermilab | Interface | IPv6 Address           |
+| ------ | ----------- | --------- | ---------------------- |
+| R1     | S0/0/1      | G0/0/0    | 2001:db8:acad:2::1 /64 |
+| R1     | S0/0/1      | G0/0/0    | fe80::1                |
+| R1     | G0/0        | G0/0/1    | 2001:db8:acad:1::1/64  |
+| R1     | G0/0        | G0/0/1    | fe80::1                |
+| R2     | S0/1/1      | G0/0/0    | 2001:db8:acad:2::2/64  |
+| R2     | S0/1/1      | G0/0/0    | fe80::2                |
+| R2     | F0/0        | G0/0/1    | 2001:db8:acad:3::1 /64 |
+| R2     | F0/0        | G0/0/1    | fe80::1                |
+| PC-A   | PC-R1       | NIC       | DHCP                   |
+| PC-B   | PC-R2       | NIC       | DHCP                   |
 
-<style>
-</style>
+
+
+
 
 # Objectives
 
@@ -734,13 +741,13 @@ configure basic settings on the PC hosts and switches.
 Attach the devices as shown in the topology diagram, and
 cable as necessary.
 
-### Step 2: Configure basic
+### Step 2: Configure basic settings for each switch. (Optional)
 
 ```
 Настройки выполнены при конфигурировании DHCPv4
 ```
 
-settings for each switch. (Optional)
+
 
 Open configuration window
 
@@ -828,7 +835,7 @@ in the table above.
 
 ```
 Из работы по DHCPv4 на R1 были созданы сабинтерфейсы. Их пришлось удалить
-и подкючить PC-A напрямую, поскольку в PacketTracer PC-A не мог получить
+и подключить PC-A напрямую, поскольку в PacketTracer PC-A не мог получить
 ipv6 через SLAAC.
 ```
 
@@ -858,6 +865,25 @@ ipv6 address fe80::1 link-local
 exit
 ipv6 route ::/0 gigabitEthernet 0/0/0 fe80::2
 ```
+
+
+
+Summary R1 (для Termilab):
+
+```
+interface g0/0/0
+ipv6 address 2001:db8:acad:2::1/64
+ipv6 address fe80::1 link-local
+interface g0/0/1
+ipv6 address 2001:db8:acad:1::1/64
+ipv6 address fe80::1 link-local
+exit
+ipv6 route ::/0 gigabitEthernet 0/0/0 fe80::2
+```
+
+
+
+
 
 Summary R2:
 
