@@ -1,6 +1,6 @@
 # Implement DHCPv4
 
-Исходные данные
+[Исходные данные](readme.md#%D0%B8%D1%81%D1%85%D0%BE%D0%B4%D0%BD%D1%8B%D0%B5-%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D0%B5)
 
 Задачи
 
@@ -1087,17 +1087,12 @@ the output to see the results of the DHCPv6 relay operation.
 c. Test
 connectivity by pinging R1’s G0/0/1 interface IP address.
 
-
-
-
-
 С этого момента выполнен переход на упрощенную схему:
 ![](screenshots/2021-04-02-14-04-03-image.png)
 
 Конфигурация Router0:
 
 ```
-
 ipv6 unicast-routing
 
 ipv6 dhcp pool Stateful
@@ -1143,12 +1138,9 @@ ipv6 nd other-
 ipv6 dhcp server Stateless
 
 no shut
-
 ```
 
 Адресация на PC1:
-
-
 
 ![](screenshots/2021-04-02-14-24-39-image.png)
 
