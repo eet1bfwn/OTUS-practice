@@ -1,0 +1,98 @@
+
+Current configuration : 1131 bytes
+!
+version 16.6.4
+no service timestamps log datetime msec
+no service timestamps debug datetime msec
+no service password-encryption
+!
+hostname Router0
+!
+!
+!
+!
+!
+!
+!
+!
+ip cef
+ipv6 unicast-routing
+!
+no ipv6 cef
+!
+ipv6 dhcp pool Stateful
+ address prefix 2001:db8:acad:3:aaa::/80 lifetime 172800 86400
+ dns-server 2001:DB8:ACAD::254
+ domain-name STATEFUL.com
+!
+ipv6 dhcp pool Stateless
+ dns-server 2001:DB8:ACAD::253
+ domain-name STATELESS.com
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+spanning-tree mode pvst
+!
+!
+!
+!
+!
+!
+interface GigabitEthernet0/0/0
+ no ip address
+ duplex auto
+ speed auto
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:DB8:ACAD:1::1/64
+ ipv6 nd other-config-flag
+ ipv6 dhcp server Stateless
+!
+interface GigabitEthernet0/0/1
+ no ip address
+ duplex auto
+ speed auto
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:DB8:ACAD:3::1/64
+ ipv6 nd managed-config-flag
+ ipv6 dhcp server Stateful
+!
+interface GigabitEthernet0/0/2
+ no ip address
+ duplex auto
+ speed auto
+ shutdown
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+ip classless
+!
+ip flow-export version 9
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+!
+line aux 0
+!
+line vty 0 4
+ login
+!
+!
+!
+end
