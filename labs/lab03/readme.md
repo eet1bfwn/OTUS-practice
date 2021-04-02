@@ -614,13 +614,13 @@ PacketTracer не знает таких команд
 
 # Configure DHCPv6
 
-[Исходные данные](#Topology)
+[Исходные данные](#head1234)
 
 [Задачи](#objectives)
 
 [Результирующие конфигурации устройств](configs)
 
-# Topology
+# <a name="head1234"></a> Topology
 
 Схема для PacketTracer:
 
