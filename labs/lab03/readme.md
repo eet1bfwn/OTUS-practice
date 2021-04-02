@@ -622,27 +622,34 @@ PacketTracer не знает таких команд
 
 # Topology
 
+
+
+Схема для PacketTracer:
+
 ![](screenshots/2021-03-25-23-36-11-image.png)
+
+Схема Termilab:
 
 ![](screenshots/2021-03-27-23-28-35-image.png)
 
+Схема Termilab с действительными именами интерфейсов:
+
+![](screenshots/2021-03-28-00-07-56-image.png)
+
 # Addressing Table
 
-<style>
-</style>
-
-| Device | IntTermilab  | Interface | IPv6 Address           |
-| ------ | ------------ | --------- | ---------------------- |
-| R1     | Serial 0/0/1 | G0/0/0    | 2001:db8:acad:2::1 /64 |
-| R1     | Serial 0/0/1 | G0/0/0    | fe80::1                |
-| R1     | G0/0         | G0/0/1    | 2001:db8:acad:1::1/64  |
-| R1     | G0/0         | G0/0/1    | fe80::1                |
-| R2     | Serial 0/1/1 | G0/0/0    | 2001:db8:acad:2::2/64  |
-| R2     | Serial 0/1/1 | G0/0/0    | fe80::2                |
-| R2     | F0/0         | G0/0/1    | 2001:db8:acad:3::1 /64 |
-| R2     | F0/0         | G0/0/1    | fe80::1                |
-| PC-A   | PC-R1        | NIC       | DHCP                   |
-| PC-B   | PC-R2        | NIC       | DHCP                   |
+| Device | Interface Termilab | Interface | IPv6 Address           |
+| ------ | ------------------ | --------- | ---------------------- |
+| R1     | Serial 0/1/1       | G0/0/0    | 2001:db8:acad:2::1 /64 |
+| R1     | Serial 0/1/1       | G0/0/0    | fe80::1                |
+| R1     | G0/0               | G0/0/1    | 2001:db8:acad:1::1/64  |
+| R1     | G0/0               | G0/0/1    | fe80::1                |
+| R2     | Serial 0/2/1       | G0/0/0    | 2001:db8:acad:2::2/64  |
+| R2     | Serial 0/2/1       | G0/0/0    | fe80::2                |
+| R2     | F0/0               | G0/0/1    | 2001:db8:acad:3::1 /64 |
+| R2     | F0/0               | G0/0/1    | fe80::1                |
+| PC-A   | PC-R1              | NIC       | DHCP                   |
+| PC-B   | PC-R2              | NIC       | DHCP                   |
 
 # Objectives
 
@@ -859,14 +866,14 @@ ipv6 route ::/0 gigabitEthernet 0/0/0 fe80::2
 Summary R1 (для Termilab):
 
 ```
-interface s0/0/0
+interface Serial 0/1/1
 ipv6 address 2001:db8:acad:2::1/64
 ipv6 address fe80::1 link-local
-interface g0/0
+interface g0/0/0
 ipv6 address 2001:db8:acad:1::1/64
 ipv6 address fe80::1 link-local
 exit
-ipv6 route ::/0 s0/0/0 fe80::2
+ipv6 route ::/0 Serial 0/1/1 fe80::2
 ```
 
 Summary R2:
@@ -887,21 +894,19 @@ ipv6 route ::/0 gigabitEthernet 0/0/0 fe80::1
 Summary R2 (Termilab):
 
 ```
-interface g0/0/0
+interface s0/2/1
 ipv6 address 2001:db8:acad:2::2/64
 ipv6 address fe80::2 link-local
-interface g0/0/1
+interface g0/0/0
 ipv6 address 2001:db8:acad:3::1/64
 ipv6 address fe80::1 link-local
 exit
-ipv6 route ::/0 gigabitEthernet 0/0/0 fe80::1
+ipv6 route ::/0 Serial 0/2/1 fe80::1
 ```
 
 ## 
 
 ## Part 2: Verify SLAAC Address Assignment from R1
-
-
 
 In Part 2, you will verify that Host PC-A receives an IPv6
 address using the SLAAC method.
@@ -910,6 +915,16 @@ Power PC-A up and ensure that the NIC is configured for
 IPv6 automatic configuration.
 
 ![](screenshots/2021-03-26-00-48-41-image.png)
+
+
+
+Termilab:
+
+![](screenshots/2021-03-28-00-11-32-image.png)
+
+#### 
+
+
 
 #### Question:
 
@@ -959,7 +974,21 @@ specify the DHCP pool you just created as the DHCP resource for this interface.
 int gi0/0/1
 ipv6 nd other-config-flag
 ipv6 dhcp server R1-STATELESS
+
+
 ```
+
+
+
+Termilab:
+
+```
+int gi0/0/0
+ipv6 nd other-config-flag
+ipv6 dhcp server R1-STATELESS
+```
+
+
 
 c. Save
 the running configuration to the startup configuration file.
@@ -974,6 +1003,14 @@ the output of **ipconfig /all** and
 notice the changes.
 
 ![](screenshots/2021-03-26-01-07-26-image.png)
+
+
+
+Termilab:
+
+![](screenshots/2021-03-28-00-17-26-image.png)
+
+
 
 f. Test
 connectivity by pinging R2’s G0/0/1 interface IP address.
