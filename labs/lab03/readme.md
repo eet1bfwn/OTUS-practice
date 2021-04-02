@@ -41,11 +41,11 @@
 
 # Задачи
 
-[Part 1: Build the Network and Configure Basic Device Settings](#part-1-build-the-network-and Configure Basic Device Settings)
+[Part 1: Build the Network and Configure Basic Device Settings](#part-1-build-the-network-and-configure-basic-device-settings)
 
-[Part 2: Configure and verify two DHCPv4 Servers on R1](Part 2: Configure and verify two DHCPv4 Servers on R1)
+[Part 2: Configure and verify two DHCPv4 Servers on R1](#part-2-configure-and-verify-two-dhcpv4-servers-on-r1)
 
-[Part 3: Configure and verify a DHCP Relay on R2](Part 3: Configure and verify a DHCP Relay on R2)
+[Part 3: Configure and verify a DHCP Relay on R2](#part-3-configure-and-verify-a-dhcp-relay-on-r2)
 
 ## Background
 
