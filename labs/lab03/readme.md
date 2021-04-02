@@ -6,13 +6,13 @@
 
 Результирующие конфигурации устройств
 
-## Исходные данные
+# Исходные данные
 
-### Topology
+## Topology
 
 ![](screenshots/2021-03-24-22-45-16-image.png)
 
-### Addressing Table
+## Addressing Table
 
 | Device | Interface   | IP Address   | Subnet Mask     | Default Gateway |
 | ------ | ----------- | ------------ | --------------- | --------------- |
@@ -29,7 +29,7 @@
 | PC-A   | NIC         | DHCP         | DHCP            | DHCP            |
 | PC-B   | NIC         | DHCP         | DHCP            | DHCP            |
 
-### VLAN Table
+## VLAN Table
 
 | VLAN | Name        | Interface Assigned          |
 | ---- | ----------- | --------------------------- |
@@ -39,7 +39,7 @@
 | 999  | Parking_Lot | S1: F0/1-4, F0/7-24, G0/1-2 |
 | 1000 | Native      | N/A                         |
 
-## Задачи
+# Задачи
 
 Part 1: Build the Network and Configure Basic Device
 
@@ -155,16 +155,12 @@ Subnet C:
 
 Record the first IP address in the Addressing Table for R2
 
-### Step 2: Cable the network as
-
-shown in the topology.
+### Step 2: Cable the network as shown in the topology.
 
 Attach the devices as shown in the topology diagram, and
 cable as necessary.
 
-### Step 3: Configure basic
-
-settings for each router.
+### Step 3: Configure basic settings for each router.
 
 a. Assign a device name to the router.
 
@@ -386,12 +382,7 @@ deactivate all the unused ports.
 **Note**: The interface range command is helpful to accomplish this task with as few commands as necessary.
 
 ```
-Вопрос - configure them for static access mode решается
-через команду switcport mode access ?
-
-
-Или же нужно switchport nonegotiate ?
-
+Вопрос
 
 Плохо ли, когда из access портов летят DTP кадры?
 ```
@@ -493,7 +484,7 @@ PC-A - находится в Vlan 100. Этот Vlan приходит на ин�
 
 In Part 2, you will configure and verify a DHCPv4 Server on R1. The DHCPv4 server will service two subnets, Subnet A and Subnet C.
 
-### Step 1: Configure R1 with DHCPv4 pools for the two supported subnets. Only the DHCP Pool for subnet A is
+### Step 1: Configure R1 with DHCPv4 pools for the two supported subnets. Only the DHCP Pool for subnet A is given below
 
 a. Exclude the first five useable addresses from each address pool.
 
@@ -589,9 +580,7 @@ b. Save your configuration.
 
 Close configuration window
 
-### Step 2: Attempt to acquire an
-
-IP address from DHCP on PC-B
+### Step 2: Attempt to acquire an IP address from DHCP on PC-B
 
 a. Open
 a command prompt on PC-B and issue the command **ipconfig /renew**.
@@ -611,8 +600,7 @@ verify DHCP bindings.
 
 ![](screenshots/2021-03-25-01-08-48-image.png)
 
-e. Issue
-the **show ip dhcp server statistics** on R1 and R2 to verify DHCP messages.
+e. Issue the **show ip dhcp server statistics** on R1 and R2 to verify DHCP messages.
 
 ```
 PacketTracer не знает таких команд
@@ -621,8 +609,6 @@ PacketTracer не знает таких команд
 # Configure DHCPv6
 
 # Topology
-
-
 
 Схема для PacketTracer:
 
@@ -636,20 +622,36 @@ PacketTracer не знает таких команд
 
 ![](screenshots/2021-03-28-00-07-56-image.png)
 
+ Упрощенная топология для работы в PacketTracer:
+
+![](screenshots/2021-04-02-13-59-49-image.png)
+
 # Addressing Table
 
-| Device | Interface Termilab | Interface | IPv6 Address           |
-| ------ | ------------------ | --------- | ---------------------- |
-| R1     | Serial 0/1/1       | G0/0/0    | 2001:db8:acad:2::1 /64 |
-| R1     | Serial 0/1/1       | G0/0/0    | fe80::1                |
-| R1     | G0/0               | G0/0/1    | 2001:db8:acad:1::1/64  |
-| R1     | G0/0               | G0/0/1    | fe80::1                |
-| R2     | Serial 0/2/1       | G0/0/0    | 2001:db8:acad:2::2/64  |
-| R2     | Serial 0/2/1       | G0/0/0    | fe80::2                |
-| R2     | F0/0               | G0/0/1    | 2001:db8:acad:3::1 /64 |
-| R2     | F0/0               | G0/0/1    | fe80::1                |
-| PC-A   | PC-R1              | NIC       | DHCP                   |
-| PC-B   | PC-R2              | NIC       | DHCP                   |
+| Device | Interface (на стенде Termilab) | Interface | IPv6 Address           |
+| ------ | ------------------------------ | --------- | ---------------------- |
+| R1     | Serial 0/1/1                   | G0/0/0    | 2001:db8:acad:2::1 /64 |
+| R1     | Serial 0/1/1                   | G0/0/0    | fe80::1                |
+| R1     | G0/0                           | G0/0/1    | 2001:db8:acad:1::1/64  |
+| R1     | G0/0                           | G0/0/1    | fe80::1                |
+| R2     | Serial 0/2/1                   | G0/0/0    | 2001:db8:acad:2::2/64  |
+| R2     | Serial 0/2/1                   | G0/0/0    | fe80::2                |
+| R2     | F0/0                           | G0/0/1    | 2001:db8:acad:3::1 /64 |
+| R2     | F0/0                           | G0/0/1    | fe80::1                |
+| PC-A   | PC-R1                          | NIC       | DHCP                   |
+| PC-B   | PC-R2                          | NIC       | DHCP                   |
+
+# 
+
+```
+Забегая вперед, использовать полноценно не удалось ни один из инструментов:
+1. PacketTracer не поддерживает DHCPv6 Relay
+2. В Eve-NG в облаке Яндекс VPC не удалось заставить получать информацию от DHCPv6-сервера - доменное имя, адресацию. Работает чистый SLAAC.
+3. Установить виртуальные машины с реальными ОС нельзя - облако Яндекс не поддерживает вложенную виртуализацию.
+4. В Termilab схема с указанием интерфейсов подключения отличается от действительных портов, к которым подключены устройства.
+5. В Termilab - Stateless не работает, Stateful нельзя настроить ввиду отсутсвия команд.
+6. В результате для ознакомления с DHCPv6 использовался PacketTracer с двумя подключенными к одному маршрутизатору компьютерами.
+```
 
 # Objectives
 
@@ -916,15 +918,11 @@ IPv6 automatic configuration.
 
 ![](screenshots/2021-03-26-00-48-41-image.png)
 
-
-
 Termilab:
 
 ![](screenshots/2021-03-28-00-11-32-image.png)
 
 #### 
-
-
 
 #### Question:
 
@@ -974,11 +972,7 @@ specify the DHCP pool you just created as the DHCP resource for this interface.
 int gi0/0/1
 ipv6 nd other-config-flag
 ipv6 dhcp server R1-STATELESS
-
-
 ```
-
-
 
 Termilab:
 
@@ -987,8 +981,6 @@ int gi0/0/0
 ipv6 nd other-config-flag
 ipv6 dhcp server R1-STATELESS
 ```
-
-
 
 c. Save
 the running configuration to the startup configuration file.
@@ -1004,13 +996,9 @@ notice the changes.
 
 ![](screenshots/2021-03-26-01-07-26-image.png)
 
-
-
 Termilab:
 
 ![](screenshots/2021-03-28-00-17-26-image.png)
-
-
 
 f. Test
 connectivity by pinging R2’s G0/0/1 interface IP address.
@@ -1098,3 +1086,70 @@ the output to see the results of the DHCPv6 relay operation.
 
 c. Test
 connectivity by pinging R1’s G0/0/1 interface IP address.
+
+
+
+
+
+С этого момента выполнен переход на упрощенную схему:
+![](screenshots/2021-04-02-14-04-03-image.png)
+
+Конфигурация Router0:
+
+```
+
+ipv6 unicast-routing
+
+ipv6 dhcp pool Stateful
+
+address prefix 2001:db8:acad:3:aaa::/80
+
+dns-server 2001:db8:acad::254
+
+domain-name STATEFUL.com
+
+exit
+
+int gi0/0/1
+
+ipv6 address 2001:db8:acad:3::1/64
+
+ipv6 address fe80::1 link-local
+
+ipv6 nd man
+
+ipv6 dhcp server Stateful
+
+no shut
+
+exit
+
+ipv6 dhcp pool Stateless
+
+dns-server 2001:db8:acad::253
+
+domain-name STATELESS.com
+
+exit
+
+int gi0/0/0
+
+ipv6 address 2001:db8:acad:1::1/64
+
+ipv6 address fe80::1 link-local
+
+ipv6 nd other-
+
+ipv6 dhcp server Stateless
+
+no shut
+
+```
+
+Адресация на PC1:
+
+
+
+![](screenshots/2021-04-02-14-24-39-image.png)
+
+Адреса выдаются корректно, однако нет имени DNS-сервера и неправильное имя домена. Связность на L3 создана.
