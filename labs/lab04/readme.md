@@ -62,7 +62,7 @@
 | 8    | Native     | N/A                                                 |
 
    Схема всей сети:
-   ![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab04\screenshots\2021-04-08-21-57-16-image.png)
+![](screenshots/2021-04-08-21-57-16-image.png)
 
 ```
 В случае правильного распределения адресов они будут также перенесены со схемы в таблицы.
