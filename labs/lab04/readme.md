@@ -17,7 +17,7 @@
    ```
    
    Скриншот схемы для Москвы:
-   ![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab04\screenshots\2021-04-08-21-53-03-image.png)
+![](screenshots/2021-04-08-21-53-03-image.png)
 
    **Москва**
 
