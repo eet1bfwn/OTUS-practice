@@ -24,7 +24,7 @@
    
    <u>Москва</u>
 
- ![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab04\screenshots\2021-04-08-19-33-11-image.png)
+![](screenshots/2021-04-08-19-33-11-image.png)
 
    R12 и R13 работают по протоколу HSPR.
 
