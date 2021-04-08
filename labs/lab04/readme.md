@@ -17,8 +17,8 @@
    ```
    
    Скриншот схемы для Москвы:
-![](screenshots/2021-04-08-21-53-03-image.png)
-
+   ![](screenshots/2021-04-08-21-53-03-image.png)
+   
    **Москва**
 
 | Device   | Interface | IP Address                                      | Default Gateway                          |
