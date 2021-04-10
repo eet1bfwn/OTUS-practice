@@ -210,18 +210,13 @@ interface Ethernet0/3
 
 **Создаем ACL для выделения нужного трафика** ???Правильная ли терминология???
 
-
 ```
-
 ip access-list standard NAT
 permit 10.14.0.0 0.0.255.255
 exit
 ```
 
-
 ???Правильно ли, что создаем максимально широкий ACL??? Или стоит под каждую подсеть сделать свой???
-
-
 
 При настройке NAT через двух провайдеров с помощью команды:
 
@@ -232,42 +227,27 @@ ip nat inside source list NAT interface e0/0
 
 В конфигурации остается только одна запись - последняя. Поэтому использование ACL для выхода в интернет через двух провайдеров не подходит. ???Это особенность виртуализации???
 
-
-
 Убираем настройку:
-
-
 
 ```
 no ip nat inside source list NAT interface e0/0
 
 no ip nat inside source list NAT interface e0/1
-
 ```
 
-
-
 Создаем route-map:
-
 
 ```
 route-map NAT_ISP0 permit 10
 match ip address NAT
-
 exit
 
-route-map NAT_ISP1permit 10
+route-map NAT_ISP1 permit 10
 match ip address NAT
-
 exit
-
 ```
 
-
-
 Задаем настройку трансляции:
-
-
 
 ```
 ip nat inside source route-map NAT_ISP0 interface e0/0 overload
@@ -280,7 +260,6 @@ ip nat inside source route-map NAT_ISP1 interface e0/1 overload
 int range e0/2.30 - ethernet 0/2.40
 ip nat inside
 no int range e0/2.32 - ethernet 0/2.39
-
 ```
 
 Отмечаем интерфейсы как outside:
@@ -289,10 +268,6 @@ no int range e0/2.32 - ethernet 0/2.39
 int range e0/0 - 1
 ip nat outside
 ```
-
-
-
-
 
 Выполняем проверку связи с R25:
 ![](screenshots/2021-04-10-22-16-30-image.png)
@@ -306,9 +281,24 @@ ip nat outside
 
 Связь есть, трансляция происходит правильно. Вывод - трансляция идет по первому правилу в конфиге - ip nat inside source route-map NAT_ISP0 interface Ethernet0/0 overload - через интерфейс E0/0.
 
-
-
-
 Указываем в route-map дополнительную строку с выходным интерфейсом:
+
+```
+route-map NAT_ISP0 permit 10
+match ip address NAT
+match interface e0/0
+exit
+
+route-map NAT_ISP1 permit 10
+match ip address NAT
+match interface e0/1
+exit
+
+```
+
+Работа через двух провайдеров минимально настроена. Связь есть:
+![](screenshots/2021-04-10-22-26-40-image.png)
+
+???В настройках route-map должен быть обязательно указан адрес выходного интерфейса, чтобы трансляция отрабатывала верно. Что значит эта строка???
 
 
