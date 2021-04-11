@@ -81,7 +81,7 @@ interface Vlan40
 ip default-gateway 10.14.40.1
 ```
 
-Настраиваем R28 - адресация, включение ipv6, dhcp:
+Настраиваем R28 - адресация, включение ipv6, dhcp, маршруты по умолчанию:
 
 ```
 hostname R28
@@ -141,6 +141,8 @@ interface Ethernet0/2.40
  ipv6 address FE80::1 link-local
  ipv6 address 2001:DB8:14:40::1/64
 !
+ip route 0.0.0.0 0.0.0.0 10.255.255.21
+ip route 0.0.0.0 0.0.0.0 10.255.255.25
 ```
 
 Настраиваем R25 - адресация, включение ipv6:
@@ -231,7 +233,6 @@ ip nat inside source list NAT interface e0/0
 
 ```
 no ip nat inside source list NAT interface e0/0
-
 no ip nat inside source list NAT interface e0/1
 ```
 
@@ -293,7 +294,6 @@ route-map NAT_ISP1 permit 10
 match ip address NAT
 match interface e0/1
 exit
-
 ```
 
 Работа через двух провайдеров минимально настроена. Связь есть:
@@ -301,4 +301,336 @@ exit
 
 ???В настройках route-map должен быть обязательно указан адрес выходного интерфейса, чтобы трансляция отрабатывала верно. Что значит эта строка???
 
+## Распределение трафика между двумя провайдерами.
 
+### Расширим список сетевых устройств. Добавим устройства R23 и R24
+
+Нам нужен R23 для проверки пути до него при использовании двух провайдеров. Тестировать будет доступность обоих его интерфейсов. R24 будет являться промежуточным, поэтому настроим и его.
+
+Настраиваем R23 - адресация, включение ipv6:
+
+```
+hostname R23
+!
+ipv6 unicast-routing
+!
+interface Ethernet0/0
+ ip address 10.255.255.2 255.255.255.252
+ ipv6 address FE80::2 link-local
+ ipv6 address 2001:DB8:255:255::2/80
+!
+interface Ethernet0/1
+ ip address 10.52.255.1 255.255.255.252
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:DB8:52:255::1/80
+!
+interface Ethernet0/2
+ ip address 10.52.255.9 255.255.255.252
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:DB8:52:255:8::9/80
+!
+```
+
+Настраиваем R24 - адресация, включение ipv6:
+
+```
+hostname R24
+!
+ipv6 unicast-routing
+!
+interface Ethernet0/0
+ ip address 10.255.255.38 255.255.255.252
+ ipv6 address FE80::2 link-local
+ ipv6 address 2001:DB8:255:255:36::38/80
+!
+interface Ethernet0/1
+ ip address 10.52.255.5 255.255.255.252
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:DB8:52:255:4::5/80
+!
+interface Ethernet0/2
+ ip address 10.52.255.10 255.255.255.252
+ ipv6 address FE80::2 link-local
+ ipv6 address 2001:DB8:52:255:8::10/80
+!
+interface Ethernet0/3
+ ip address 10.255.255.29 255.255.255.252
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:DB8:255:255:28::29/80
+!
+```
+
+### Настроим статические маршруты на R25, R26 до R23
+
+На R23 мы не можем добраться до R28:
+
+![](screenshots/2021-04-10-23-17-15-image.png)
+
+??? Почему не пишется, что нет маршрута??? Куда отправляются пакеты при ping и traceroute???
+
+R25 - настроим маршрут до R23 e0/2 через R23:
+
+```
+ip route 10.52.255.8 255.255.255.252 10.52.255.1
+```
+
+На R23 укажем маршут до R28 e0/1 через R25 и маршрут до R28 e0/0 через R24; также маршрут до R26 e0/0:
+
+```
+ip route 10.255.255.20 255.255.255.252 10.52.255.2
+ip route 10.255.255.24 255.255.255.252 10.52.255.10
+ip route 10.255.255.4 255.255.255.252 10.52.255.10
+```
+
+На R24 укажем маршрут до R28 e0/0 через R26 и до R23 e0/1 через R23:
+
+```
+ip route 10.255.255.24 255.255.255.252 10.52.255.6
+ip route 10.52.255.0 255.255.255.252 10.52.255.9
+```
+
+На R26 укажем маршрут до R23 0/1-2 через R24:
+
+```
+ip route 10.52.255.8 255.255.255.252 10.52.255.5
+ip route 10.52.255.0 255.255.255.252 10.52.255.5
+```
+
+---
+
+Проверяем связь:
+![](screenshots/2021-04-10-23-53-41-image.png)
+
+???Почему traceroute работает правильно, но ping нет???
+
+---
+
+После проверки с VPC30 все удивительным образом заработало:
+![](screenshots/2021-04-11-00-33-14-image.png)
+
+---
+
+### Настройка распределения трафика между провайдерами
+
+Распределение трафика между двумя провайдерами возможно несколькими путями:
+
+1. Через статические маршруты по умолчанию. Будет работать балансировка, если у обоих маршрутов будет одинаковая AD.
+
+2. Один провайдер основной, второй резервный и задействуется при аварии у первого.
+
+3. Через PBR направляем часть трафика через одного провайдера, часть через другого. Однако при аварии у одного из них потребуется менять route-map, чтобы трафик шел через другого провайдера.
+   
+   Реализуем третий вариант.
+
+До распределения трафика маршрут выбирался без нашего контроля:
+![](screenshots/2021-04-11-18-06-01-image.png)
+
+Настроим вариант, при котором трафик из четных подсетей пойдет через 10.255.255.21 - ISP1, а трафик из нечетных - через 10.255.255.25 - ISP0.
+
+Создаем ACL:
+
+```
+no ip access-list standard SUBNET-EVEN
+
+no ip access-list standard SUBNET-ODD
+
+ip access-list standard SUBNET-EVEN
+
+permit 10.14.0.0 0.0.254.255
+
+exit
+
+ip access-list standard SUBNET-ODD
+
+permit 10.14.1.0 0.0.254.255
+
+exit
+```
+
+Создаем route-map, которую будем навешивать на каждый интерфейс. 
+
+```
+no route-map ISP-BALANCING
+route-map ISP-BALANCING permit 10
+match ip address SUBNET-ODD
+set ip next-hop 10.255.255.25
+route-map ISP-BALANCING permit 20
+match ip address SUBNET-EVEN
+set ip next-hop 10.255.255.21
+exit
+```
+
+Навешиваем их на интерфейсы:
+
+```
+int range ethernet 0/2.30 - ethernet 0/2.40
+no ip policy route-map ISP-BALANCING
+ip policy route-map ISP-BALANCING
+no int range ethernet 0/2.32 - ethernet 0/2.39
+```
+
+---
+
+Если же в route-map добавить правило:
+
+```
+route-map ISP-BALANCING permit 30
+
+set ip next-hop 10.255.255.21
+
+exit
+```
+
+После этого клиентам не выдается dhcp:
+
+![](screenshots/2021-04-11-19-10-39-image.png)
+
+Почему??? Заключительный пакет от маршрутизатора не приходит???
+
+---
+
+Результат:
+
+![](screenshots/2021-04-11-19-24-49-image.png)
+
+Из четной подсети трафик стал идти через 10.255.255.21 - ISP1, а трафик из нечетных  через 10.255.255.25 - ISP0.
+
+Если мы будем гасить линки провайдеров, то next-hop, указанный в route-map пропадет из доступности, и видимо в этом случае clause будет пропущен - трафик начнет автоматически идти через маршрут по умолчанию:
+
+![](screenshots/2021-04-11-19-29-02-image.png)
+
+---
+
+Если же линк будет поднят, но далее по пути будет отсутствовать связность (гасим на R25 линк e0/0):
+
+![](screenshots/2021-04-11-19-33-59-image.png)
+
+Пакеты с R28 будут уходить в сторону сбойного пути. Ответов не будет получено.
+
+## Настройка отслеживания
+
+Не забываем включить обратно на R25 интерфейс e0/0.
+
+На R28 добавляем отслеживание работы провайдеров. 
+
+SLA:
+
+ip sla 1
+icmp-echo 10.52.255.1 source-interface Ethernet0/0
+frequency 10
+ip sla schedule 1 life forever start-time now
+
+ip sla 2
+icmp-echo 10.52.255.1 source-interface Ethernet0/1
+frequency 10
+ip sla schedule 2 life forever start-time now
+
+Создаем треки:
+
+track 1 ip sla 1 reachability
+
+track 2 ip sla 2 reachability
+
+Удаляем старые маршруты и добавляем их повторно с треками:
+
+```
+no ip route 0.0.0.0 0.0.0.0 10.255.255.21
+no ip route 0.0.0.0 0.0.0.0 10.255.255.25
+
+
+
+ip route 0.0.0.0 0.0.0.0 10.255.255.25 name ISP0 track 1
+ip route 0.0.0.0 0.0.0.0 10.255.255.21 name ISP1 track 2
+```
+
+Для проверки гасим линк R25 e0/0
+
+![](screenshots/2021-04-11-20-15-27-image.png)
+
+Связь пропадает; после удаления маршрута по трэку не восстанавливается. Причина - маршрут в R28 до следующего хопа по-прежнему доступен. Поэтому route-policy продолжает направлять пакеты в сторону этого хопа с неисправным провайдером.
+
+Для выхода из сутации мы можем использовать Event manager - удалять из route-policy пункт, соответствующий этому провайдеру. После восстановления связи - возвращать пункт обратно:
+
+```
+event manager applet ISP0_DOWN
+ event track 1 state down
+ action 001 cli command "enable"
+ action 002 cli command "conf t"
+ action 003 cli command "no route-map ISP-BALANCING permit 10"
+ action 004 cli command "end"
+exit
+
+
+event manager applet ISP1_DOWN
+ event track 2 state down
+ action 001 cli command "enable"
+ action 002 cli command "conf t"
+ action 003 cli command "no route-map ISP-BALANCING permit 20"
+ action 004 cli command "end"
+exit
+
+
+
+event manager applet ISP0_UP
+ event track 1 state up
+ action 001 cli command "enable"
+ action 002 cli command "conf t"
+ action 003 cli command "route-map ISP-BALANCING permit 10"
+ action 004 cli command "match ip address SUBNET-ODD"
+ action 005 cli command "set ip next-hop 10.255.255.25"
+ action 006 cli command "end"
+exit
+
+
+
+event manager applet ISP1_UP
+ event track 2 state up
+ action 001 cli command "enable"
+ action 002 cli command "conf t"
+ action 003 cli command "route-map ISP-BALANCING permit 20"
+ action 004 cli command "match ip address SUBNET-EVEN"
+ action 005 cli command "set ip next-hop 10.255.255.21"
+ action 006 cli command "end"
+exit
+```
+
+**Проверяем**
+
+На маршруте провайдеров все в порядке:
+
+![](screenshots/2021-04-11-20-46-36-image.png)
+
+Гасим линк R24 e0/1 на пути у провайдера ISP0:
+
+![](screenshots/2021-04-11-20-55-17-image.png)
+
+Включаем обратно:
+![](screenshots/2021-04-11-20-56-01-image.png)
+
+Гасим линк R25 e0/0:
+
+![](screenshots/2021-04-11-20-57-10-image.png)
+
+Включаем обратно:
+
+![](screenshots/2021-04-11-20-57-45-image.png)
+
+Переключение работает, как и было задумано.
+
+???Однако была ситуация, когда даже при включенном линке на одном из путей провайдера пинг до целевого узла не доходил (не было маршрута, т.к. при погашенном по пути линке маршрут выбрасывается).  Пришлось руками прописать маршрут, дождаться поднятия трека и удалить маршрут, т.к. после трека нужный маршрут был восстановлен.
+
+Вопрос - это сбой виртуализации? Или действительно проблема?
+
+Вопрос - в качестве источинка запроса sla указываем интерфейс или ip?
+
+
+
+Т.е. логика такая:
+
+1. Есть маршрут до целевого узла через провайдера, с треком.
+
+2. Маршут отслеживается через sla c указанием интерфейса, с которого отправляются пробы.
+
+3. Если ответов нет, то маршрут удаляется.
+
+4. Как дальше проверять связь до целевого узла, если маршрут до него через следующий хоп удален? Даже если проблемы у провайдера прошли, у нас все равно с этого интерфейса не может быть отправлен запрос, т.к. нет маршута.  
