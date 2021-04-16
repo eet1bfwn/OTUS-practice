@@ -485,6 +485,37 @@ exit
 
 Почему??? Заключительный пакет от маршрутизатора не приходит???
 
+
+```
+R28(config)#
+*Apr 16 18:04:29.945: DHCPD: client's VPN is .
+*Apr 16 18:04:29.945: DHCPD: No option 125
+*Apr 16 18:04:29.945: DHCPD: DHCPDISCOVER received from client 0100.5079.6668.1e                                                                                                              on interface Ethernet0/2.30.
+*Apr 16 18:04:29.945: DHCPD: Sending DHCPOFFER to client 0100.5079.6668.1e (10.1                                                                                                             4.30.101).
+*Apr 16 18:04:29.945: DHCPD: no option 125
+*Apr 16 18:04:29.945: DHCPD: ARP entry exists (10.14.30.101, 0050.7966.681e).
+*Apr 16 18:04:29.945: DHCPD: unicasting BOOTREPLY to client 0050.7966.681e (10.1                                                                                                             4.30.101).
+R28(config)#no route-map ISP-BALANCING permit 5
+R28(config)#
+*Apr 16 18:07:54.365: DHCPD: client's VPN is .
+*Apr 16 18:07:54.365: DHCPD: No option 125
+*Apr 16 18:07:54.365: DHCPD: DHCPDISCOVER received from client 0100.5079.6668.1e                                                                                                              on interface Ethernet0/2.30.
+*Apr 16 18:07:54.365: DHCPD: Sending DHCPOFFER to client 0100.5079.6668.1e (10.1                                                                                                             4.30.101).
+*Apr 16 18:07:54.365: DHCPD: no option 125
+*Apr 16 18:07:54.365: DHCPD: ARP entry exists (10.14.30.101, 0050.7966.681e).
+*Apr 16 18:07:54.365: DHCPD: unicasting BOOTREPLY to client 0050.7966.681e (10.1                                                                                                             4.30.101).
+*Apr 16 18:07:55.365: DHCPD: client's VPN is .
+*Apr 16 18:07:55.365: DHCPD: No option 125
+*Apr 16 18:07:55.365: DHCPD: DHCPREQUEST received from client 0100.5079.6668.1e.
+*Apr 16 18:07:55.365: DHCPD: No default domain to append - abort update
+*Apr 16 18:07:55.365: DHCPD: Sending DHCPACK to client 0100.5079.6668.1e (10.14.                                                                                                             30.101).DHCPD: Setting only requested parameters
+
+*Apr 16 18:07:55.365: DHCPD: no option 125
+*Apr 16 18:07:55.365: DHCPD: ARP entry exists (10.14.30.101, 0050.7966.681e).
+*Apr 16 18:07:55.365: DHCPD: unicasting BOOTREPLY to client 0050.7966.681e (10.1                                                                                                             4.30.101).
+R28(config)#
+```
+
 ---
 
 Результат:
