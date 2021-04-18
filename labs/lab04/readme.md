@@ -14,7 +14,11 @@
    
    **Москва**
    
+   
+   
    Скриншот:
+   
+   
    ![](screenshots/2021-04-08-21-53-03-image.png)   
 
 | Device   | Interface | IP Address                                      | Default Gateway                          |
