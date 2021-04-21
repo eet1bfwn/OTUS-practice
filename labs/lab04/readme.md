@@ -221,25 +221,20 @@ R16 и R17 работают по протоколу HSPR.
 
 6. используете ipv4 и ipv6
 
-
-
-
-
 Ниже расположено дополняющееся описание настройки оборудования.
 
 ## Настройка оборудования в Москве
-
-
 
 Схема:
 
 ![](screenshots/2021-04-21-19-54-16-image.png)
 
 
-###Коммутаторы
+
+### Коммутаторы
+
+
 Настроим коммутаторы - hostname, stp, vlan, interfaces, management vlan, lag
-
-
 
 SW2:
 
@@ -318,10 +313,7 @@ ip default-gateway 10.177.40.1
 end
 
 wr
-
 ```
-
-
 
 SW3:
 
@@ -400,12 +392,7 @@ ip default-gateway 10.177.40.1
 end
 
 wr
-
 ```
-
-
-
-
 
 SW4:
 
@@ -482,11 +469,7 @@ spanning-tree vlan 70 priority 20480
 end
 
 wr
-
 ```
-
-
-
 
 SW5:
 
@@ -564,13 +547,13 @@ spanning-tree vlan 70 priority 24576
 end
 
 wr
-
 ```
 
 После такой конфигурации (при условии, что R12 и R13 выключены), корневым коммутатором становится SW4. Поэтому линк SW5 e0/2 (не избыточный) будет в состоянии FWD.
 
 
-###Настройка маршрутизаторов
+
+### Настройка маршрутизаторов
 
 
 
@@ -588,7 +571,7 @@ bridge irb
 bridge 10 priority 1
 bridge 40 priority 1
 bridge 70 priority 1
- 
+
 bridge 40 protocol ieee
 bridge 40 route ip
 bridge 10 protocol ieee
@@ -641,9 +624,9 @@ interface BVI10
  standby version 2
  standby 0 ip 10.177.10.1
  standby 1 ipv6 2001:DB8:177:10::1/64
- 
- 
- 
+
+
+
  interface BVI40
  no shutdown
  ip address 10.177.40.2 255.255.255.0
@@ -651,9 +634,9 @@ interface BVI10
  standby version 2
  standby 0 ip 10.177.40.1
  standby 1 ipv6 2001:DB8:177:40::1/64
- 
- 
- 
+
+
+
  interface BVI70
  no shutdown
  ip address 10.177.70.2 255.255.255.0
@@ -661,28 +644,23 @@ interface BVI10
  standby version 2
  standby 0 ip 10.177.70.1
  standby 1 ipv6 2001:DB8:177:70::1/64
- 
- 
+
+
  exit
- 
- 
- 
+
+
+
 ip dhcp excluded-address 10.177.10.1 10.177.10.100
 ip dhcp excluded-address 10.177.70.1 10.177.70.100
 
 ip dhcp pool POOL-VLAN-10
  network 10.177.10.0 255.255.255.0
  default-router 10.177.10.1 
- 
+
 ip dhcp pool POOL-VLAN-70
  network 10.177.70.0 255.255.255.0
  default-router 10.177.70.1 
- 
- 
 ```
-
-
-
 
 R13
 
@@ -696,7 +674,7 @@ bridge irb
 bridge 10 priority 2
 bridge 40 priority 2
 bridge 70 priority 2
- 
+
 bridge 40 protocol ieee
 bridge 40 route ip
 bridge 10 protocol ieee
@@ -749,9 +727,9 @@ interface BVI10
  standby version 2
  standby 0 ip 10.177.10.1
  standby 1 ipv6 2001:DB8:177:10::1/64
- 
- 
- 
+
+
+
  interface BVI40
  no shutdown
  ip address 10.177.40.3 255.255.255.0
@@ -759,9 +737,9 @@ interface BVI10
  standby version 2
  standby 0 ip 10.177.40.1
  standby 1 ipv6 2001:DB8:177:40::1/64
- 
- 
- 
+
+
+
  interface BVI70
  no shutdown
  ip address 10.177.70.3 255.255.255.0
@@ -769,22 +747,20 @@ interface BVI10
  standby version 2
  standby 0 ip 10.177.70.1
  standby 1 ipv6 2001:DB8:177:70::1/64
- 
- 
+
+
  exit
- 
- 
- 
+
+
+
 ip dhcp excluded-address 10.177.10.1 10.177.10.100
 ip dhcp excluded-address 10.177.70.1 10.177.70.100
 
 ip dhcp pool POOL-VLAN-10
  network 10.177.10.0 255.255.255.0
  default-router 10.177.10.1 
- 
+
 ip dhcp pool POOL-VLAN-70
  network 10.177.70.0 255.255.255.0
  default-router 10.177.70.1 
- 
- 
 ```
