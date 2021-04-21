@@ -20,19 +20,19 @@
 
 | Device   | Interface | IP Address                                      | Default Gateway                          |
 | -------- | --------- | ----------------------------------------------- | ---------------------------------------- |
-| R12      | bvi2.40   | 10.177.40.2/24<br/>2001:db8:177:40::2/64        |                                          |
-| R12      | bvi2.10   | 10.177.10.2/24<br/>2001:db8:177:10::2/64        |                                          |
-| R12      | bvi2.70   | 10.177.70.2/24<br/>2001:db8:177:70::2/64        |                                          |
+| R12      | bvi 40    | 10.177.40.2/24<br/>2001:db8:177:40::2/64        |                                          |
+| R12      | bvi 10    | 10.177.10.2/24<br/>2001:db8:177:10::2/64        |                                          |
+| R12      | bvi 70    | 10.177.70.2/24<br/>2001:db8:177:70::2/64        |                                          |
 | R12      | e0/2      | 10.177.255.6/30<br/>2001:db8:177:255:4::6/80    |                                          |
 | R12      | e0/3      | 10.177.255.13/30<br/>2001:db8:177:255:12::13/80 |                                          |
-| R13      | bvi3.40   | 10.177.40.3/24<br/>2001:db8:177:40::3/64        |                                          |
-| R13      | bvi3.10   | 10.177.10.3/24<br/>2001:db8:177:10::3/64        |                                          |
-| R13      | bvi3.70   | 10.177.70.3/24<br/>2001:db8:177:70::3/64        |                                          |
+| R13      | bvi 40    | 10.177.40.3/24<br/>2001:db8:177:40::3/64        |                                          |
+| R13      | bvi 10    | 10.177.10.3/24<br/>2001:db8:177:10::3/64        |                                          |
+| R13      | bvi 70    | 10.177.70.3/24<br/>2001:db8:177:70::3/64        |                                          |
 | R13      | e0/2      | 10.177.255.18/30<br/>2001:db8:177:255:16::18/80 |                                          |
 | R13      | e0/3      | 10.177.255.10/30<br/>2001:db8:177:255:8::10/80  |                                          |
-| R177Virt | bvi1.40   | 10.177.40.1/24<br/>2001:db8:177:40::1/64        |                                          |
-| R177Virt | bvi1.10   | 10.177.10.1/24<br/>2001:db8:177:10::1/64        |                                          |
-| R177Virt | bvi1.70   | 10.177.70.1/24<br/>2001:db8:177:70::1/64        |                                          |
+| R177Virt | bvi 40    | 10.177.40.1/24<br/>2001:db8:177:40::1/64        |                                          |
+| R177Virt | bvi 10    | 10.177.10.1/24<br/>2001:db8:177:10::1/64        |                                          |
+| R177Virt | bvi 70    | 10.177.70.1/24<br/>2001:db8:177:70::1/64        |                                          |
 | R14      | e0/0      | 10.177.255.5/30<br/>2001:db8:177:255:4::5/80    |                                          |
 | R14      | e0/1      | 10.177.255.9/30<br/>2001:db8:177:255:8::9/80    |                                          |
 | R14      | e0/2      | 10.255.255.9/30<br/>2001:db8:255:255:8::9/80    |                                          |
@@ -66,18 +66,18 @@
 
 | Device  | Interface | IP Address                                      | Default Gateway                        |
 | ------- | --------- | ----------------------------------------------- | -------------------------------------- |
-| R17     | bvi2.40   | 10.78.40.2/24<br/>2001:db8:78:40::2/64          |                                        |
-| R17     | bvi2.80   | 10.78.80.2/24<br/>2001:db8:78:80::2/64          |                                        |
-| R17     | bvi2.10   | 10.78.10.2/24<br/>2001:db8:78:10::2/64          |                                        |
+| R17     | bvi 40    | 10.78.40.2/24<br/>2001:db8:78:40::2/64          |                                        |
+| R17     | bvi 80    | 10.78.80.2/24<br/>2001:db8:78:80::2/64          |                                        |
+| R17     | bvi 10    | 10.78.10.2/24<br/>2001:db8:78:10::2/64          |                                        |
 | R17     | e0/1      | 10.78.255.1/30<br/>2001:db8:78:255:0::1/80      |                                        |
-| R16     | bvi3.40   | 10.78.40.3/24<br/>2001:db8:78:40::3/64          |                                        |
-| R16     | bvi3.10   | 10.78.80.3/24<br/>2001:db8:78:80::3/64          |                                        |
-| R16     | bvi3.70   | 10.78.10.3/24<br/>2001:db8:78:10::3/64          |                                        |
+| R16     | bvi 40    | 10.78.40.3/24<br/>2001:db8:78:40::3/64          |                                        |
+| R16     | bvi 80    | 10.78.80.3/24<br/>2001:db8:78:80::3/64          |                                        |
+| R16     | bvi 10    | 10.78.10.3/24<br/>2001:db8:78:10::3/64          |                                        |
 | R16     | e0/1      | 10.78.255.6/30<br/>2001:db8:78:255:4::6/80      |                                        |
 | R16     | e0/3      | 10.78.255.9/30<br/>2001:db8:78:255:8::9/80      |                                        |
-| R78Virt | bvi1.40   | 10.78.40.1/24<br/>2001:db8:78:40::1/64          |                                        |
-| R78Virt | bvi1.80   | 10.78.80.1/24<br/>2001:db8:78:80::1/64          |                                        |
-| R78Virt | bvi1.10   | 10.78.10.1/24<br/>2001:db8:78:10::1/64          |                                        |
+| R78Virt | bvi 40    | 10.78.40.1/24<br/>2001:db8:78:40::1/64          |                                        |
+| R78Virt | bvi 80    | 10.78.80.1/24<br/>2001:db8:78:80::1/64          |                                        |
+| R78Virt | bvi 10    | 10.78.10.1/24<br/>2001:db8:78:10::1/64          |                                        |
 | R18     | e0/0      | 10.78.255.5/30<br/>2001:db8:78:255:4::5/80      |                                        |
 | R18     | e0/1      | 10.78.255.2/30<br/>2001:db8:78:255:0::2/80      |                                        |
 | R18     | e0/2      | 10.255.255.30/30<br/>2001:db8:255:255:28::30/80 |                                        |
@@ -220,3 +220,571 @@ R16 и R17 работают по протоколу HSPR.
 Между SW9-10 организована агрегация линков.
 
 6. используете ipv4 и ipv6
+
+
+
+
+
+Ниже расположено дополняющееся описание настройки оборудования.
+
+## Настройка оборудования в Москве
+
+
+
+Схема:
+
+![](screenshots/2021-04-21-19-54-16-image.png)
+
+
+###Коммутаторы
+Настроим коммутаторы - hostname, stp, vlan, interfaces, management vlan, lag
+
+
+
+SW2:
+
+```
+enable
+conf t
+hostname SW2
+
+spanning-tree mode rapid-pvst
+
+vtp mode off
+vlan 8
+name Native
+exit
+vlan 10
+name Operations
+exit
+vlan 40
+name Management
+exit
+vlan 70
+name Developers
+exit
+vlan 90
+name ParkingLot
+exit
+
+
+
+
+int range e0/0-1,e0/3,e1/2-3
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk native vlan 8
+switchport trunk allowed vlan 10,40,70
+no shutdown
+exit
+
+
+int e0/2
+switchport mode access
+switchport access vlan 70
+switchport nonegotiate
+no shutdown
+exit
+
+
+int range e1/0-1
+switchport mode access
+switchport access vlan 90
+switchport nonegotiate
+shutdown
+exit
+
+
+int range e0/1,e1/2
+channel-group 3 mode active
+exit
+
+int range e0/0,e1/3
+channel-group 4 mode active
+exit
+
+
+
+int vlan 40
+ip address 10.177.40.22 255.255.255.0
+ipv6 address 2001:db8:177:40::22/64
+no shut
+exit
+
+
+ip default-gateway 10.177.40.1
+
+
+end
+
+wr
+
+```
+
+
+
+SW3:
+
+```
+enable
+conf t
+hostname SW3
+
+spanning-tree mode rapid-pvst
+
+vtp mode off
+vlan 8
+name Native
+exit
+vlan 10
+name Operations
+exit
+vlan 40
+name Management
+exit
+vlan 70
+name Developers
+exit
+vlan 90
+name ParkingLot
+exit
+
+
+
+
+int range e0/0-1,e0/3,e1/2-3
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk native vlan 8
+switchport trunk allowed vlan 10,40,70
+no shutdown
+exit
+
+
+int e0/2
+switchport mode access
+switchport access vlan 10
+switchport nonegotiate
+no shutdown
+exit
+
+
+int range e1/0-1
+switchport mode access
+switchport access vlan 90
+switchport nonegotiate
+shutdown
+exit
+
+
+int range e0/1,e1/2
+channel-group 2 mode active
+exit
+
+int range e0/0,e1/3
+channel-group 1 mode active
+exit
+
+
+
+int vlan 40
+ip address 10.177.40.23 255.255.255.0
+ipv6 address 2001:db8:177:40::23/64
+no shut
+exit
+
+
+ip default-gateway 10.177.40.1
+
+
+end
+
+wr
+
+```
+
+
+
+
+
+SW4:
+
+```
+enable
+conf t
+hostname SW4
+no ip domain-lookup
+spanning-tree mode rapid-pvst
+
+vtp mode off
+vlan 8
+name Native
+exit
+vlan 10
+name Operations
+exit
+vlan 40
+name Management
+exit
+vlan 70
+name Developers
+exit
+vlan 90
+name ParkingLot
+exit
+
+
+
+
+int range e0/0-2,e1/0-3
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk native vlan 8
+switchport trunk allowed vlan 10,40,70
+no shutdown
+exit
+
+
+
+int e0/3
+switchport mode access
+switchport access vlan 90
+switchport nonegotiate
+shutdown
+exit
+
+
+int range e0/1,e1/2
+channel-group 3 mode active
+exit
+
+int range e0/0,e1/3
+channel-group 1 mode active
+exit
+
+
+
+int vlan 40
+ip address 10.177.40.24 255.255.255.0
+ipv6 address 2001:db8:177:40::24/64
+no shut
+exit
+
+
+ip default-gateway 10.177.40.1
+
+! Set priority. It is greater than priority R12, R13
+spanning-tree vlan 10 priority 20480
+spanning-tree vlan 40 priority 20480
+spanning-tree vlan 70 priority 20480
+
+
+end
+
+wr
+
+```
+
+
+
+
+SW5:
+
+```
+enable
+conf t
+hostname SW5
+no ip domain-lookup
+spanning-tree mode rapid-pvst
+
+vtp mode off
+vlan 8
+name Native
+exit
+vlan 10
+name Operations
+exit
+vlan 40
+name Management
+exit
+vlan 70
+name Developers
+exit
+vlan 90
+name ParkingLot
+exit
+
+
+
+
+int range e0/0-2,e1/0-3
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk native vlan 8
+switchport trunk allowed vlan 10,40,70
+no shutdown
+exit
+
+
+
+int e0/3
+switchport mode access
+switchport access vlan 90
+switchport nonegotiate
+shutdown
+exit
+
+
+int range e0/1,e1/2
+channel-group 2 mode active
+exit
+
+int range e0/0,e1/3
+channel-group 4 mode active
+exit
+
+
+
+int vlan 40
+ip address 10.177.40.25 255.255.255.0
+ipv6 address 2001:db8:177:40::25/64
+no shut
+exit
+
+
+ip default-gateway 10.177.40.1
+
+
+
+! Set priority. It is greater than priority of SW4, R12, R13
+spanning-tree vlan 10 priority 24576
+spanning-tree vlan 40 priority 24576
+spanning-tree vlan 70 priority 24576
+
+end
+
+wr
+
+```
+
+После такой конфигурации (при условии, что R12 и R13 выключены), корневым коммутатором становится SW4. Поэтому линк SW5 e0/2 (не избыточный) будет в состоянии FWD.
+
+
+###Настройка маршрутизаторов
+
+
+
+Настроим маршрутизаторы - hostname, stp, bridge, vlan, interfaces, dhcp pool, HSRP
+
+R12
+
+```
+enable
+conf t
+hostname R12
+no ip domain-lookup
+ipv6 unicast-routing
+bridge irb
+bridge 10 priority 1
+bridge 40 priority 1
+bridge 70 priority 1
+ 
+bridge 40 protocol ieee
+bridge 40 route ip
+bridge 10 protocol ieee
+bridge 10 route ip
+bridge 70 protocol ieee
+bridge 70 route ip
+
+int range e0/0,e0/1
+no shutdown
+
+int e0/0.8
+encapsulation dot1Q 8 native
+bridge-group 8
+
+int e0/1.8
+encapsulation dot1Q 8 native
+bridge-group 8
+
+int e0/0.10
+encapsulation dot1Q 10
+bridge-group 10
+
+int e0/1.10
+encapsulation dot1Q 10
+bridge-group 10
+
+
+int e0/0.40
+encapsulation dot1Q 40
+bridge-group 40
+
+int e0/1.40
+encapsulation dot1Q 40
+bridge-group 40
+
+int e0/0.70
+encapsulation dot1Q 70
+bridge-group 70
+
+int e0/1.70
+encapsulation dot1Q 70
+bridge-group 70
+
+
+
+interface BVI10
+ no shutdown
+ ip address 10.177.10.2 255.255.255.0
+ ipv6 address 2001:DB8:177:10::2/64
+ standby version 2
+ standby 0 ip 10.177.10.1
+ standby 1 ipv6 2001:DB8:177:10::1/64
+ 
+ 
+ 
+ interface BVI40
+ no shutdown
+ ip address 10.177.40.2 255.255.255.0
+ ipv6 address 2001:DB8:177:40::2/64
+ standby version 2
+ standby 0 ip 10.177.40.1
+ standby 1 ipv6 2001:DB8:177:40::1/64
+ 
+ 
+ 
+ interface BVI70
+ no shutdown
+ ip address 10.177.70.2 255.255.255.0
+ ipv6 address 2001:DB8:177:70::2/64
+ standby version 2
+ standby 0 ip 10.177.70.1
+ standby 1 ipv6 2001:DB8:177:70::1/64
+ 
+ 
+ exit
+ 
+ 
+ 
+ip dhcp excluded-address 10.177.10.1 10.177.10.100
+ip dhcp excluded-address 10.177.70.1 10.177.70.100
+
+ip dhcp pool POOL-VLAN-10
+ network 10.177.10.0 255.255.255.0
+ default-router 10.177.10.1 
+ 
+ip dhcp pool POOL-VLAN-70
+ network 10.177.70.0 255.255.255.0
+ default-router 10.177.70.1 
+ 
+ 
+```
+
+
+
+
+R13
+
+```
+enable
+conf t
+hostname R13
+no ip domain-lookup
+ipv6 unicast-routing
+bridge irb
+bridge 10 priority 2
+bridge 40 priority 2
+bridge 70 priority 2
+ 
+bridge 40 protocol ieee
+bridge 40 route ip
+bridge 10 protocol ieee
+bridge 10 route ip
+bridge 70 protocol ieee
+bridge 70 route ip
+
+int range e0/0,e0/1
+no shutdown
+
+int e0/0.8
+encapsulation dot1Q 8 native
+bridge-group 8
+
+int e0/1.8
+encapsulation dot1Q 8 native
+bridge-group 8
+
+int e0/0.10
+encapsulation dot1Q 10
+bridge-group 10
+
+int e0/1.10
+encapsulation dot1Q 10
+bridge-group 10
+
+
+int e0/0.40
+encapsulation dot1Q 40
+bridge-group 40
+
+int e0/1.40
+encapsulation dot1Q 40
+bridge-group 40
+
+int e0/0.70
+encapsulation dot1Q 70
+bridge-group 70
+
+int e0/1.70
+encapsulation dot1Q 70
+bridge-group 70
+
+
+
+interface BVI10
+ no shutdown
+ ip address 10.177.10.3 255.255.255.0
+ ipv6 address 2001:DB8:177:10::3/64
+ standby version 2
+ standby 0 ip 10.177.10.1
+ standby 1 ipv6 2001:DB8:177:10::1/64
+ 
+ 
+ 
+ interface BVI40
+ no shutdown
+ ip address 10.177.40.3 255.255.255.0
+ ipv6 address 2001:DB8:177:40::3/64
+ standby version 2
+ standby 0 ip 10.177.40.1
+ standby 1 ipv6 2001:DB8:177:40::1/64
+ 
+ 
+ 
+ interface BVI70
+ no shutdown
+ ip address 10.177.70.3 255.255.255.0
+ ipv6 address 2001:DB8:177:70::3/64
+ standby version 2
+ standby 0 ip 10.177.70.1
+ standby 1 ipv6 2001:DB8:177:70::1/64
+ 
+ 
+ exit
+ 
+ 
+ 
+ip dhcp excluded-address 10.177.10.1 10.177.10.100
+ip dhcp excluded-address 10.177.70.1 10.177.70.100
+
+ip dhcp pool POOL-VLAN-10
+ network 10.177.10.0 255.255.255.0
+ default-router 10.177.10.1 
+ 
+ip dhcp pool POOL-VLAN-70
+ network 10.177.70.0 255.255.255.0
+ default-router 10.177.70.1 
+ 
+ 
+```
