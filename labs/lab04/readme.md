@@ -229,10 +229,7 @@ R16 и R17 работают по протоколу HSPR.
 
 ![](screenshots/2021-04-21-19-54-16-image.png)
 
-
-
 ### Коммутаторы
-
 
 Настроим коммутаторы - hostname, stp, vlan, interfaces, management vlan, lag
 
@@ -551,11 +548,7 @@ wr
 
 После такой конфигурации (при условии, что R12 и R13 выключены), корневым коммутатором становится SW4. Поэтому линк SW5 e0/2 (не избыточный) будет в состоянии FWD.
 
-
-
 ### Настройка маршрутизаторов
-
-
 
 Настроим маршрутизаторы - hostname, stp, bridge, vlan, interfaces, dhcp pool, HSRP
 
@@ -618,35 +611,35 @@ bridge-group 70
 
 
 interface BVI10
- no shutdown
- ip address 10.177.10.2 255.255.255.0
- ipv6 address 2001:DB8:177:10::2/64
- standby version 2
- standby 0 ip 10.177.10.1
- standby 1 ipv6 2001:DB8:177:10::1/64
+no shutdown
+ip address 10.177.10.2 255.255.255.0
+ipv6 address 2001:DB8:177:10::2/64
+standby version 2
+standby 0 ip 10.177.10.1
+standby 1 ipv6 2001:DB8:177:10::1/64
 
 
 
- interface BVI40
- no shutdown
- ip address 10.177.40.2 255.255.255.0
- ipv6 address 2001:DB8:177:40::2/64
- standby version 2
- standby 0 ip 10.177.40.1
- standby 1 ipv6 2001:DB8:177:40::1/64
+interface BVI40
+no shutdown
+ip address 10.177.40.2 255.255.255.0
+ipv6 address 2001:DB8:177:40::2/64
+standby version 2
+standby 0 ip 10.177.40.1
+standby 1 ipv6 2001:DB8:177:40::1/64
 
 
 
- interface BVI70
- no shutdown
- ip address 10.177.70.2 255.255.255.0
- ipv6 address 2001:DB8:177:70::2/64
- standby version 2
- standby 0 ip 10.177.70.1
- standby 1 ipv6 2001:DB8:177:70::1/64
+interface BVI70
+no shutdown
+ip address 10.177.70.2 255.255.255.0
+ipv6 address 2001:DB8:177:70::2/64
+standby version 2
+standby 0 ip 10.177.70.1
+standby 1 ipv6 2001:DB8:177:70::1/64
 
 
- exit
+exit
 
 
 
@@ -654,12 +647,16 @@ ip dhcp excluded-address 10.177.10.1 10.177.10.100
 ip dhcp excluded-address 10.177.70.1 10.177.70.100
 
 ip dhcp pool POOL-VLAN-10
- network 10.177.10.0 255.255.255.0
- default-router 10.177.10.1 
+network 10.177.10.0 255.255.255.0
+default-router 10.177.10.1 
 
 ip dhcp pool POOL-VLAN-70
- network 10.177.70.0 255.255.255.0
- default-router 10.177.70.1 
+etwork 10.177.70.0 255.255.255.0
+default-router 10.177.70.1 
+
+end
+
+wr
 ```
 
 R13
@@ -721,35 +718,35 @@ bridge-group 70
 
 
 interface BVI10
- no shutdown
- ip address 10.177.10.3 255.255.255.0
- ipv6 address 2001:DB8:177:10::3/64
- standby version 2
- standby 0 ip 10.177.10.1
- standby 1 ipv6 2001:DB8:177:10::1/64
+no shutdown
+ip address 10.177.10.3 255.255.255.0
+ipv6 address 2001:DB8:177:10::3/64
+standby version 2
+standby 0 ip 10.177.10.1
+standby 1 ipv6 2001:DB8:177:10::1/64
 
 
 
- interface BVI40
- no shutdown
- ip address 10.177.40.3 255.255.255.0
- ipv6 address 2001:DB8:177:40::3/64
- standby version 2
- standby 0 ip 10.177.40.1
- standby 1 ipv6 2001:DB8:177:40::1/64
+interface BVI40
+no shutdown
+ip address 10.177.40.3 255.255.255.0
+ipv6 address 2001:DB8:177:40::3/64
+standby version 2
+standby 0 ip 10.177.40.1
+standby 1 ipv6 2001:DB8:177:40::1/64
 
 
 
- interface BVI70
- no shutdown
- ip address 10.177.70.3 255.255.255.0
- ipv6 address 2001:DB8:177:70::3/64
- standby version 2
- standby 0 ip 10.177.70.1
- standby 1 ipv6 2001:DB8:177:70::1/64
+interface BVI70
+no shutdown
+ip address 10.177.70.3 255.255.255.0
+ipv6 address 2001:DB8:177:70::3/64
+standby version 2
+standby 0 ip 10.177.70.1
+standby 1 ipv6 2001:DB8:177:70::1/64
 
 
- exit
+exit
 
 
 
@@ -757,10 +754,14 @@ ip dhcp excluded-address 10.177.10.1 10.177.10.100
 ip dhcp excluded-address 10.177.70.1 10.177.70.100
 
 ip dhcp pool POOL-VLAN-10
- network 10.177.10.0 255.255.255.0
- default-router 10.177.10.1 
+network 10.177.10.0 255.255.255.0
+default-router 10.177.10.1 
 
 ip dhcp pool POOL-VLAN-70
- network 10.177.70.0 255.255.255.0
- default-router 10.177.70.1 
+network 10.177.70.0 255.255.255.0
+default-router 10.177.70.1 
+
+
+end
+wr
 ```
