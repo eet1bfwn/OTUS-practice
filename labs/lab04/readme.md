@@ -550,7 +550,7 @@ wr
 
 ### Настройка маршрутизаторов
 
-Настроим маршрутизаторы - hostname, stp, bridge, vlan, interfaces, dhcp pool, HSRP
+Настроим маршрутизаторы - hostname, stp, bridge,, interfaces, dhcp pool, HSRP
 
 R12
 
@@ -571,6 +571,19 @@ bridge 10 protocol ieee
 bridge 10 route ip
 bridge 70 protocol ieee
 bridge 70 route ip
+
+
+int e0/2
+ip addr 10.177.255.6 255.255.255.252
+ipv6 addr 2001:db8:177:255:4::6/80
+no shut
+
+int e0/3
+ip addr 10.177.255.13 255.255.255.252
+ipv6 addr 2001:db8:177:255:12::13/80
+no shut
+
+
 
 int range e0/0,e0/1
 no shutdown
@@ -679,6 +692,21 @@ bridge 10 route ip
 bridge 70 protocol ieee
 bridge 70 route ip
 
+
+
+int e0/2
+ip addr 10.177.255.18 255.255.255.252
+ipv6 addr 2001:db8:177:255:16::18/80
+no shut
+
+int e0/3
+ip addr 10.177.255.10 255.255.255.252
+ipv6 addr 2001:db8:177:255:8::10/80
+no shut
+
+
+
+
 int range e0/0,e0/1
 no shutdown
 
@@ -765,3 +793,628 @@ default-router 10.177.70.1
 end
 wr
 ```
+
+Проверяем связь с  VPC1 и VPC7:
+![](screenshots/2021-04-24-13-36-53-image.png)
+
+Далее запускаем ping на продолжительное время и выполняем отключение портов на R12:
+
+![](screenshots/2021-04-24-13-39-15-image.png)
+
+Связь не пропала, шла через R13. Включаем порты обратно и выключаем на R13:
+![](screenshots/2021-04-24-13-41-00-image.png)
+
+Пропало 5 пакетов, далее в активный режим перешел R12 и стал выполнять маршрутизацию.
+
+Для остальных маршрутизаторов в Москве выполним минимальные настройки -  hostname, interfaces
+
+R14
+
+```
+en
+conf t
+hostname R14
+no ip domain-lookup
+ipv6 unicast-routing
+
+
+int e0/0
+ip addr 10.177.255.5 255.255.255.252
+ipv6 addr 2001:db8:177:255:4::5/80
+no shut
+
+
+int e0/1
+ip addr 10.177.255.9 255.255.255.252
+ipv6 addr 2001:db8:177:255:8::9/80
+no shut
+
+int e0/2
+ip addr 10.255.255.9 255.255.255.252
+ipv6 addr 2001:db8:255:255:8::9/80
+no shut
+
+int e0/3
+ip addr 10.177.255.2 255.255.255.252
+ipv6 addr 2001:db8:177:255:0::2/80
+no shut
+
+end
+wr
+```
+
+R15
+
+```
+en
+conf t
+hostname R15
+no ip domain-lookup
+ipv6 unicast-routing
+
+
+int e0/0
+ip addr 10.177.255.17 255.255.255.252
+ipv6 addr 2001:db8:177:255:16::17/80
+no shut
+
+
+int e0/1
+ip addr 10.177.255.14 255.255.255.252
+ipv6 addr 2001:db8:177:255:12::14/80
+no shut
+
+int e0/2
+ip addr 10.255.255.17 255.255.255.252
+ipv6 addr 2001:db8:255:255:16::17/80
+no shut
+
+int e0/3
+ip addr 10.177.255.21 255.255.255.252
+ipv6 addr 2001:db8:177:255:20::21/80
+no shut
+
+end
+wr
+```
+
+R19
+
+```
+en
+conf t
+hostname R19
+no ip domain-lookup
+ipv6 unicast-routing
+
+
+int e0/0
+ip addr 10.177.255.1 255.255.255.252
+ipv6 addr 2001:db8:177:255:0::1/80
+no shut
+
+
+end
+wr
+```
+
+R20
+
+```
+en
+conf t
+hostname R20
+no ip domain-lookup
+ipv6 unicast-routing
+
+
+int e0/0
+ip addr 10.177.255.22 255.255.255.252
+ipv6 addr 2001:db8:177:255:20::22/80
+no shut
+
+
+end
+wr
+```
+
+## Настройка оборудования в Санкт-Петербурге
+
+Схема:
+
+### Коммутаторы
+
+Настроим коммутаторы - hostname, stp, vlan, interfaces, management vlan, lag
+
+SW9:
+
+```
+enable
+conf t
+hostname SW9
+
+spanning-tree mode rapid-pvst
+
+vtp mode off
+vlan 8
+name Native
+exit
+vlan 10
+name Operations
+exit
+vlan 40
+name Management
+exit
+vlan 80
+name Developers
+exit
+vlan 90
+name ParkingLot
+exit
+
+
+
+
+int range e0/0-1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk native vlan 8
+switchport trunk allowed vlan 10,40,80
+no shutdown
+exit
+
+
+int range e0/3,e1/0
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk native vlan 8
+switchport trunk allowed vlan 10,40,80
+no shutdown
+exit
+
+
+int e0/2
+switchport mode access
+switchport access vlan 80
+switchport nonegotiate
+no shutdown
+exit
+
+
+int range e1/1-3
+switchport mode access
+switchport access vlan 90
+switchport nonegotiate
+shutdown
+exit
+
+
+int range e0/0-1
+channel-group 1 mode active
+exit
+
+
+
+int vlan 40
+ip address 10.78.40.29 255.255.255.0
+ipv6 address 2001:db8:78:40::29/64
+no shut
+exit
+
+
+ip default-gateway 10.78.40.1
+
+
+end
+
+wr
+```
+
+SW10:
+
+```
+enable
+conf t
+hostname SW10
+
+spanning-tree mode rapid-pvst
+
+vtp mode off
+vlan 8
+name Native
+exit
+vlan 10
+name Operations
+exit
+vlan 40
+name Management
+exit
+vlan 80
+name Developers
+exit
+vlan 90
+name ParkingLot
+exit
+
+
+
+
+int range e0/0-1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk native vlan 8
+switchport trunk allowed vlan 10,40,80
+no shutdown
+exit
+
+
+int range e0/3,e1/0
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk native vlan 8
+switchport trunk allowed vlan 10,40,80
+no shutdown
+exit
+
+
+int e0/2
+switchport mode access
+switchport access vlan 10
+switchport nonegotiate
+no shutdown
+exit
+
+
+int range e1/1-3
+switchport mode access
+switchport access vlan 90
+switchport nonegotiate
+shutdown
+exit
+
+
+int range e0/0-1
+channel-group 1 mode active
+exit
+
+
+
+int vlan 40
+ip address 10.78.40.30 255.255.255.0
+ipv6 address 2001:db8:78:40::30/64
+no shut
+exit
+
+
+ip default-gateway 10.78.40.1
+
+
+end
+
+wr
+```
+
+### Настройка маршрутизаторов
+
+Настроим маршрутизаторы - hostname, stp, bridge, interfaces, dhcp pool, HSRP
+
+R17
+
+```
+enable
+conf t
+hostname R17
+no ip domain-lookup
+ipv6 unicast-routing
+bridge irb
+bridge 10 priority 1
+bridge 40 priority 1
+bridge 80 priority 1
+
+bridge 40 protocol ieee
+bridge 40 route ip
+bridge 10 protocol ieee
+bridge 10 route ip
+bridge 80 protocol ieee
+bridge 80 route ip
+
+
+
+int e0/1
+ip addr 10.78.255.1 255.255.255.252
+ipv6 addr 2001:db8:78:255:0::1/80
+no shut
+
+
+
+int range e0/0,e0/2
+no shutdown
+
+int e0/0.8
+encapsulation dot1Q 8 native
+bridge-group 8
+
+int e0/1.8
+encapsulation dot1Q 8 native
+bridge-group 8
+
+int e0/0.10
+encapsulation dot1Q 10
+bridge-group 10
+
+int e0/1.10
+encapsulation dot1Q 10
+bridge-group 10
+
+
+int e0/0.40
+encapsulation dot1Q 40
+bridge-group 40
+
+int e0/1.40
+encapsulation dot1Q 40
+bridge-group 40
+
+int e0/0.80
+encapsulation dot1Q 80
+bridge-group 80
+
+int e0/1.80
+encapsulation dot1Q 80
+bridge-group 80
+
+
+
+interface BVI10
+no shutdown
+ip address 10.78.10.2 255.255.255.0
+ipv6 address 2001:DB8:78:10::2/64
+standby version 2
+standby 0 ip 10.78.10.1
+standby 1 ipv6 2001:DB8:78:10::1/64
+
+
+
+interface BVI40
+no shutdown
+ip address 10.78.40.2 255.255.255.0
+ipv6 address 2001:DB8:78:40::2/64
+standby version 2
+standby 0 ip 10.78.40.1
+standby 1 ipv6 2001:DB8:78:40::1/64
+
+
+
+interface BVI80
+no shutdown
+ip address 10.78.80.2 255.255.255.0
+ipv6 address 2001:DB8:78:80::2/64
+standby version 2
+standby 0 ip 10.78.80.1
+standby 1 ipv6 2001:DB8:78:80::1/64
+
+
+exit
+
+
+
+ip dhcp excluded-address 10.78.10.1 10.78.10.100
+ip dhcp excluded-address 10.78.80.1 10.78.80.100
+
+ip dhcp pool POOL-VLAN-10
+network 10.78.10.0 255.255.255.0
+default-router 10.78.10.1 
+
+ip dhcp pool POOL-VLAN-80
+network 10.78.80.0 255.255.255.0
+default-router 10.78.80.1 
+
+end
+
+wr
+```
+
+R16
+
+```
+enable
+conf t
+hostname R16
+no ip domain-lookup
+ipv6 unicast-routing
+bridge irb
+bridge 10 priority 1
+bridge 40 priority 1
+bridge 80 priority 1
+
+bridge 40 protocol ieee
+bridge 40 route ip
+bridge 10 protocol ieee
+bridge 10 route ip
+bridge 80 protocol ieee
+bridge 80 route ip
+
+
+
+int e0/1
+ip addr 10.78.255.6 255.255.255.252
+ipv6 addr 2001:db8:78:255:4::6/80
+no shut
+
+
+
+int range e0/0,e0/2
+no shutdown
+
+int e0/0.8
+encapsulation dot1Q 8 native
+bridge-group 8
+
+int e0/1.8
+encapsulation dot1Q 8 native
+bridge-group 8
+
+int e0/0.10
+encapsulation dot1Q 10
+bridge-group 10
+
+int e0/1.10
+encapsulation dot1Q 10
+bridge-group 10
+
+
+int e0/0.40
+encapsulation dot1Q 40
+bridge-group 40
+
+int e0/1.40
+encapsulation dot1Q 40
+bridge-group 40
+
+int e0/0.80
+encapsulation dot1Q 80
+bridge-group 80
+
+int e0/1.80
+encapsulation dot1Q 80
+bridge-group 80
+
+
+
+interface BVI10
+no shutdown
+ip address 10.78.10.3 255.255.255.0
+ipv6 address 2001:DB8:78:10::3/64
+standby version 2
+standby 0 ip 10.78.10.1
+standby 1 ipv6 2001:DB8:78:10::1/64
+
+
+
+interface BVI40
+no shutdown
+ip address 10.78.40.3 255.255.255.0
+ipv6 address 2001:DB8:78:40::3/64
+standby version 2
+standby 0 ip 10.78.40.1
+standby 1 ipv6 2001:DB8:78:40::1/64
+
+
+
+interface BVI80
+no shutdown
+ip address 10.78.80.3 255.255.255.0
+ipv6 address 2001:DB8:78:80::3/64
+standby version 2
+standby 0 ip 10.78.80.1
+standby 1 ipv6 2001:DB8:78:80::1/64
+
+
+exit
+
+
+
+ip dhcp excluded-address 10.78.10.1 10.78.10.100
+ip dhcp excluded-address 10.78.80.1 10.78.80.100
+
+ip dhcp pool POOL-VLAN-10
+network 10.78.10.0 255.255.255.0
+default-router 10.78.10.1 
+
+ip dhcp pool POOL-VLAN-80
+network 10.78.80.0 255.255.255.0
+default-router 10.78.80.1 
+
+end
+
+wr
+```
+
+R32
+
+```
+enable
+conf t
+hostname R32
+no ip domain-lookup
+ipv6 unicast-routing
+
+
+int  e0/0
+ip addr 10.78.255.10 255.255.255.252
+ipv6 addr 2001:db8:78:255:8::10/80
+no shutdown
+
+end
+wr
+```
+
+R18
+
+```
+enable
+conf t
+hostname R18
+no ip domain-lookup
+ipv6 unicast-routing
+
+
+int  e0/0
+ip addr 10.78.255.5 255.255.255.252
+ipv6 addr 2001:db8:78:255:5::5/80
+no shutdown
+
+
+int  e0/1
+ip addr 10.78.255.2 255.255.255.252
+ipv6 addr 2001:db8:78:255:0::2/80
+no shutdown
+
+
+int  e0/2
+ip addr 10.255.255.30 255.255.255.252
+ipv6 addr 2001:db8:255:255:28::30/80
+no shutdown
+
+
+int  e0/3
+ip addr 10.255.255.34 255.255.255.252
+ipv6 addr 2001:db8:255:255:32::34/80
+no shutdown
+
+
+
+
+end
+wr
+```
+
+Проверяем связь с  VPC и VPC8:
+
+
+
+
+![](screenshots/2021-04-24-14-58-47-image.png)
+
+
+
+
+
+Далее запускаем ping на продолжительное время и выполняем отключение портов на R16:
+
+
+
+
+
+
+
+![](screenshots/2021-04-24-15-00-37-image.png)
+
+HSRP отработал.
+
+
+
+
+
+
+
