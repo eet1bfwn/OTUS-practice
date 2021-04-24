@@ -920,7 +920,11 @@ wr
 
 ## Настройка оборудования в Санкт-Петербурге
 
+
+
 Схема:
+
+### ![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab04\screenshots\2021-04-24-15-20-44-image.png)
 
 ### Коммутаторы
 
@@ -1361,7 +1365,7 @@ ipv6 unicast-routing
 
 int  e0/0
 ip addr 10.78.255.5 255.255.255.252
-ipv6 addr 2001:db8:78:255:5::5/80
+ipv6 addr 2001:db8:78:255:4::5/80
 no shutdown
 
 
@@ -1391,30 +1395,78 @@ wr
 
 Проверяем связь с  VPC и VPC8:
 
-
-
-
 ![](screenshots/2021-04-24-14-58-47-image.png)
 
-
-
-
-
 Далее запускаем ping на продолжительное время и выполняем отключение портов на R16:
-
-
-
-
-
-
 
 ![](screenshots/2021-04-24-15-00-37-image.png)
 
 HSRP отработал.
 
+##Прочие маршрутизаторы стенда:
+
+R23-28 и SW9 будут настроены в следующей лабораторной работе PBR/IP SLA.
+
+R22
+
+```
+enable
+conf t
+hostname R22
+no ip domain-lookup
+ipv6 unicast-routing
+
+
+int  e0/0
+ip addr 10.255.255.10 255.255.255.252
+ipv6 addr 2001:db8:255:255:8::10/80
+no shutdown
+
+int  e0/1
+ip addr 10.255.255.13 255.255.255.252
+ipv6 addr 2001:db8:255:255:12::13/80
+no shutdown
+
+
+int  e0/2
+ip addr 10.255.255.1 255.255.255.252
+ipv6 addr 2001:db8:255:255:0::1/80
+no shutdown
 
 
 
+end
+wr
+```
+
+R21
+
+```
+enable
+conf t
+hostname R23
+no ip domain-lookup
+ipv6 unicast-routing
+
+
+int  e0/0
+ip addr 10.255.255.18 255.255.255.252
+ipv6 addr 2001:db8:255:255:16::18/80
+no shutdown
+
+int  e0/1
+ip addr 10.52.255.14 255.255.255.252
+ipv6 addr 2001:db8:255:255:12::14/80
+no shutdown
+
+
+int  e0/2
+ip addr 10.255.255.37 255.255.255.252
+ipv6 addr 2001:db8:255:255:36::37/80
+no shutdown
 
 
 
+end
+wr
+```
