@@ -326,7 +326,7 @@ wr
 Нам нужно исключить маршруты до сетей зоны 101 - 10.177.255.0, сейчас этот маршрут есть. И связь есть:
 ![](screenshots/2021-04-27-01-21-42-image.png)
 
-Будем осуществлять фильтрацию на ABR R15 в зону 102, соостветственно это входящее направление. 
+Будем осуществлять фильтрацию на ABR R15 в зону 102, соответственно это входящее направление. 
 
 R15:
 
@@ -384,3 +384,410 @@ area 102 filter-list prefix FILTER_FROM_AREA_101 in
 Есть, поскольку пакеты отправляются на шлюз последней надежды.
 
 Вопросы???? Зачем фильтрвать префиксы??? Зачем в зоне stub вообще нужно отображать столько маршрутов, лучше все заменить на дефолт
+
+
+
+
+
+
+
+# OSPFv3
+
+Делаем все то же самое для ipv6.
+
+
+
+
+
+
+
+## Настройка R12-13 на OSPFv3 в зоне 10
+
+R12:
+
+```
+en
+conf t
+router ospfv3 1
+router-id 10.0.0.12
+passive-interface default
+no passive-interface e0/2
+no passive-interface e0/3
+no passive-interface BVI 40
+
+
+int range e0/2-3
+ipv6 ospf 1 area 10
+
+
+int BVI 10
+ipv6 ospf 1 area 10
+
+int BVI 40
+ipv6 ospf 1 area 10
+
+int BVI 70
+ipv6 ospf 1 area 10
+
+end
+
+wr
+```
+
+
+
+
+
+R13:
+
+```
+en
+conf t
+router ospfv3 1
+router-id 10.0.0.13
+passive-interface default
+no passive-interface e0/2
+no passive-interface e0/3
+no passive-interface BVI 40
+
+
+int range e0/2-3
+ipv6 ospf 1 area 10
+
+
+int BVI 10
+ipv6 ospf 1 area 10
+
+int BVI 40
+ipv6 ospf 1 area 10
+
+int BVI 70
+ipv6 ospf 1 area 10
+
+end
+
+wr
+```
+
+
+
+
+
+## Настройка R14-15 на OSPFv3 в зоне 0
+
+R14:
+
+```
+en
+conf t
+router ospfv3 1
+router-id 0.0.0.14
+passive-interface default
+no passive-interface e0/0
+no passive-interface e0/1
+no passive-interface e0/2
+no passive-interface e0/3
+
+int range e0/0-1
+ipv6 ospf 1 area 10
+
+
+int e0/2
+ipv6 ospf 1 area 0
+
+
+end
+
+wr
+
+
+```
+
+
+
+R15:
+
+```
+en
+conf t
+router ospfv3 1
+router-id 0.0.0.15
+passive-interface default
+no passive-interface e0/0
+no passive-interface e0/1
+no passive-interface e0/2
+no passive-interface e0/3
+
+int range e0/0-1
+ipv6 ospf 1 area 10
+
+
+int e0/2
+ipv6 ospf 1 area 0
+
+
+end
+
+wr
+```
+
+
+
+
+
+Смотрим соседей R14-15:
+
+
+
+![](screenshots/2021-05-02-16-52-18-image.png)
+
+
+
+Эти машрутизаторы не видят друг друга, т.к. прямого линка между ними нет.
+
+
+
+## Настраиваем виртуальный линк между R14-15
+
+R14:
+
+```
+en
+conf t
+router ospfv3 1
+address-family ipv6
+area 10 virtual-link 0.0.0.15
+end
+wr
+
+```
+
+R15:
+
+```
+en
+conf t
+router ospfv3 1
+address-family ipv6
+area 10 virtual-link 0.0.0.14
+end
+wr
+```
+
+
+
+
+
+Маршрутизаторы друг друга видят:
+
+![](screenshots/2021-05-02-17-04-18-image.png)
+
+
+
+Маршрутами обмениваются:
+![](screenshots/2021-05-02-17-06-01-image.png)
+
+
+
+
+
+
+
+## Настраиваем R14 и R15 на получения маршрута по умолчанию
+
+
+
+Как было сказано в секции настройки OSPFv3, для передачи маршрута по умолчанию создадим его на маршрутизаторах зоны 0 и будем транслировать его во все зоны.
+
+
+R14:
+
+
+
+```
+en
+conf t
+ipv6 route ::/0 2001:db8:255:255:8::10
+router ospfv3 1
+address-family ipv6
+default-information originate
+
+end
+wr
+
+```
+
+
+
+R15:
+
+```
+en
+conf t
+ipv6 route ::/0 2001:db8:255:255:16::18
+router ospfv3 1
+address-family ipv6
+default-information originate
+
+end
+wr
+```
+
+
+
+
+
+Проверяем, что пришло на R12-13:
+![](screenshots/2021-05-02-17-17-47-image.png)
+
+Маршруты по умолчанию пришли, что и требовалось получить.
+
+
+
+
+
+## Маршрутизатор R19 находится в зоне 101 и получает только маршрут по умолчанию
+
+
+
+Настраиваем интферфейс R14 e0/3 как находящейся в зоне 101, саму зону - totally stub.
+
+R14:
+
+```
+en
+conf t
+int e0/3
+ipv6 ospf 1 area 101 
+exit
+
+
+router ospfv3 1
+area 101 stub no-summary
+
+end
+
+wr
+```
+
+
+
+На R19 настраиваем интерфейс e0/0 как находящийся в зоне 101, зону 101 - stub. Плюс начальные настройки OSPFv3
+
+R19:
+
+```
+en
+conf t
+router ospfv3 1
+router-id 101.0.0.19
+passive-interface default
+no passive-interface e0/0
+area 101 stub
+exit
+
+int e0/0
+ipv6 ospf 1 area 101
+
+end
+
+wr
+```
+
+
+
+Результат:
+![](screenshots/2021-05-02-17-31-56-image.png)
+
+Почему запись отличается от ip route ospf в плане кода??? Здесь указан маршут без символа *.
+
+
+
+
+
+
+
+## Маршрутизатор R20 находится в зоне 102 и получает все маршруты, кроме маршрутов до сетей зоны 101
+
+
+
+Зону маршрутизатора R20 настраиваем как stub, для этого потребуется настройка и R15.
+
+R15:
+
+```
+en
+conf t
+router ospfv3 1
+area 102 stub
+
+
+exit
+
+int e0/3
+ipv6 ospf 1 area 102
+
+end 
+
+wr
+```
+
+
+
+
+
+R20:
+
+```
+en
+conf t
+router ospfv3 1
+router-id 102.0.0.20
+passive-interface default
+no passive-interface e0/0
+area 102 stub
+
+exit
+
+
+interface e0/0
+ipv6 ospf 1 area 102
+
+end
+wr
+```
+
+
+
+Результат - получаем все маршруты, включая маршрут по умолчанию:
+![](screenshots/2021-05-02-17-42-26-image.png)
+
+
+
+Чтобы отфильтрвать маршрут до 2001:db8:177:255:0::/80, настраиваем R15.
+
+R15:
+
+```
+en
+conf t
+ipv6 prefix-list FILTER_FROM_AREA_101 seq 10 deny 2001:db8:177:255:0::/80
+ipv6 prefix-list FILTER_FROM_AREA_101 seq 20 permit ::/0 le 128
+
+router ospfv3 1
+address-family ipv6
+area 102 filter-list prefix FILTER_FROM_AREA_101 in
+
+end
+wr
+```
+
+
+
+
+
+Смотрим результат на R20:
+
+![](screenshots/2021-05-02-17-55-32-image.png)
+
+Маршрут не пришел, фильтрация отработала.
