@@ -21,6 +21,8 @@
 
 [Настройка IS-IS IPv6](#head2)
 
+[Конфигурации устройств](configs)
+
 ## <a name="head0"></a>  Схема
 
 ![](screenshots/2021-05-07-13-44-43-image.png)
