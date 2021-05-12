@@ -1,0 +1,167 @@
+
+!
+! Last configuration change at 13:22:27 EET Wed May 12 2021
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+service compress-config
+!
+hostname SW5
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+clock timezone EET 2 0
+!
+!
+!
+!
+!
+vtp mode off
+!
+!
+!
+no ip domain-lookup
+ip cef
+no ipv6 cef
+!
+!
+!
+spanning-tree mode rapid-pvst
+spanning-tree extend system-id
+spanning-tree vlan 10,40,70 priority 24576
+!
+vlan internal allocation policy ascending
+!
+vlan 8
+ name Native
+!
+vlan 10
+ name Operations
+!
+vlan 40
+ name Management
+!
+vlan 70
+ name Developers
+!
+vlan 90
+ name ParkingLot
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Port-channel2
+ no shutdown
+ switchport trunk allowed vlan 10,40,70
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+!
+interface Port-channel4
+ no shutdown
+ switchport trunk allowed vlan 10,40,70
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+!
+interface Ethernet0/0
+ no shutdown
+ switchport trunk allowed vlan 10,40,70
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+ channel-group 4 mode active
+!
+interface Ethernet0/1
+ no shutdown
+ switchport trunk allowed vlan 10,40,70
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+ channel-group 2 mode active
+!
+interface Ethernet0/2
+ no shutdown
+ switchport trunk allowed vlan 10,40,70
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+!
+interface Ethernet0/3
+ no shutdown
+ switchport access vlan 90
+ switchport mode access
+ shutdown
+!
+interface Ethernet1/0
+ no shutdown
+ switchport trunk allowed vlan 10,40,70
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+!
+interface Ethernet1/1
+ no shutdown
+ switchport trunk allowed vlan 10,40,70
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+!
+interface Ethernet1/2
+ no shutdown
+ switchport trunk allowed vlan 10,40,70
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+ channel-group 2 mode active
+!
+interface Ethernet1/3
+ no shutdown
+ switchport trunk allowed vlan 10,40,70
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+ channel-group 4 mode active
+!
+interface Vlan40
+ no shutdown
+ ip address 10.177.40.25 255.255.255.0
+ ipv6 address 2001:DB8:177:40::25/64
+!
+ip default-gateway 10.177.40.1
+ip forward-protocol nd
+!
+no ip http server
+no ip http secure-server
+!
+!
+!
+!
+!
+!
+control-plane
+!
+!
+line con 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+!
+!
+end

@@ -1,0 +1,195 @@
+
+!
+! Last configuration change at 16:15:20 MSK Wed May 12 2021
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+service compress-config
+!
+hostname SW12
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+clock timezone MSK 3 0
+!
+!
+!
+!
+!
+vtp mode off
+!
+ip dhcp excluded-address 10.177.10.1 10.177.10.100
+ip dhcp excluded-address 10.177.70.1 10.177.70.100
+!
+ip dhcp pool POOL-VLAN-10
+ network 10.177.10.0 255.255.255.0
+ default-router 10.177.10.1 
+!
+ip dhcp pool POOL-VLAN-70
+ network 10.177.70.0 255.255.255.0
+ default-router 10.177.70.1 
+!
+!
+no ip domain-lookup
+ip cef
+ipv6 unicast-routing
+ipv6 cef
+!
+!
+!
+spanning-tree mode rapid-pvst
+spanning-tree extend system-id
+!
+vlan internal allocation policy ascending
+!
+vlan 8
+ name Native
+!
+vlan 10
+ name Operations
+!
+vlan 40
+ name Management
+!
+vlan 70
+ name Developers
+!
+vlan 90
+ name ParkingLot
+!
+vlan 100
+ name InterRouterTrunk
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Ethernet0/0
+ no shutdown
+ switchport trunk allowed vlan 10,40,70
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+!
+interface Ethernet0/1
+ no shutdown
+ switchport trunk allowed vlan 10,40,70
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+!
+interface Ethernet0/2
+ no shutdown
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 100
+ switchport mode trunk
+!
+interface Ethernet0/3
+ no shutdown
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 100
+ switchport mode trunk
+!
+interface Ethernet1/0
+ no shutdown
+ shutdown
+!
+interface Ethernet1/1
+ no shutdown
+ shutdown
+!
+interface Ethernet1/2
+ no shutdown
+ shutdown
+!
+interface Ethernet1/3
+ no shutdown
+ shutdown
+!
+interface Vlan10
+ no shutdown
+ ip address 10.177.10.2 255.255.255.0
+ standby version 2
+ standby 0 ip 10.177.10.1
+ standby 1 ipv6 2001:DB8:177:10::1/64
+ ip ospf 1 area 10
+ ipv6 address 2001:DB8:177:10::2/64
+ ipv6 ospf 1 area 10
+!
+interface Vlan40
+ no shutdown
+ ip address 10.177.40.2 255.255.255.0
+ standby version 2
+ standby 0 ip 10.177.40.1
+ standby 1 ipv6 2001:DB8:177:40::1/64
+ ip ospf 1 area 10
+ ipv6 address 2001:DB8:177:40::2/64
+ ipv6 ospf 1 area 10
+!
+interface Vlan70
+ no shutdown
+ ip address 10.177.70.2 255.255.255.0
+ standby version 2
+ standby 0 ip 10.177.70.1
+ standby 1 ipv6 2001:DB8:177:70::1/64
+ ip ospf 1 area 10
+ ipv6 address 2001:DB8:177:70::2/64
+ ipv6 ospf 1 area 10
+!
+interface Vlan100
+ no shutdown
+ ip address 10.177.255.2 255.255.255.248
+ ip ospf 1 area 0
+ ipv6 address 2001:DB8:177:255::2/80
+ ipv6 ospf 1 area 0
+!
+router ospfv3 1
+ router-id 10.0.0.12
+ !
+ address-family ipv6 unicast
+  passive-interface default
+  no passive-interface Vlan40
+  no passive-interface Vlan100
+ exit-address-family
+!
+router ospf 1
+ router-id 10.0.0.12
+ passive-interface default
+ no passive-interface Vlan40
+ no passive-interface Vlan100
+!
+ip forward-protocol nd
+!
+no ip http server
+no ip http secure-server
+!
+!
+!
+!
+!
+!
+control-plane
+!
+!
+line con 0
+ logging synchronous
+line aux 0
+line vty 0 4
+!
+!
+end
