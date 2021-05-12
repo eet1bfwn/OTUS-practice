@@ -15,16 +15,12 @@
 
 Документация оформлена на github. (желательно использовать markdown)
 
-
-
 Схема офиса в Москве:
-
 
 ![](screenshots/2021-05-02-18-55-54-image.png)
 
-
-
 [Настройка OSPF](#head1)
+
 * [Настройка R12-13 на OSPF в зоне 10](#head3)
 * [Настройка R14-15 на OSPF в зоне 0](#head4)
 * [Настраиваем виртуальный линк между R14-15](#head5)
@@ -33,6 +29,7 @@
 * [Маршрутизатор R20 находится в зоне 102 и получает все маршруты, кроме маршрутов до сетей зоны 101](#head8)
 
 [Настройка OSPFv3](#head2)
+
 * [Настройка R12-13 на OSPF в зоне 10](#head9)
 * [Настройка R14-15 на OSPF в зоне 0](#head10)
 * [Настраиваем виртуальный линк между R14-15](#head11)
@@ -214,7 +211,6 @@ area 10 virtual-link 0.0.0.14
 Маршрутизаторы R14-15 обмениваются маршрутной информацией в рамках одной зоны. 
 
 ![](screenshots/2021-04-27-00-32-10-image.png)
-
 
 ## <a name="head6"></a> Настраиваем R12 и R13 на получения маршрута по умолчанию
 
@@ -537,7 +533,6 @@ wr
 
 ## <a name="head11"></a> Настраиваем виртуальный линк между R14-15
 
-
 Здесь появляется отличие в синтаксисе с ipv4 - необходимо проходить в address-family ipv6. ???Зачем???
 
 R14:
@@ -727,3 +722,502 @@ wr
 ![](screenshots/2021-05-02-17-55-32-image.png)
 
 Маршрут не пришел, фильтрация отработала.
+
+# Изменение топологии
+
+![](screenshots/2021-05-02-18-55-54-image.png)
+
+Виртуальные линки R14-15 являются временным решением. Пришла пора это исправить. В качестве альтернативы возможны варианты:
+
+- Добавить прямое соединение между маршрутизаторами. Потребуется замена маршрутизаторов либо с помощью плат расширения увеличить количество портов. Для виртуальной лаборатории абсолютно не сложно. Поэтому вариант отложим.
+
+- Расширить нулевую зону до R12-15.  Если рассматривать R14-15 не как Core и R12-13 как Distribution, то получим Collapsed Core, применимый для не больших сетей. В нем допустимо суммировать, к нему допустимо подключать другие сегменты напрямую, без Distribution-прослойки. Вариант также простой, но в дальнейшем возможно придется все же вводить разделение на Core и Distribution. Так что для практики рассмотрим третий вариант.
+
+- Заменить R12-13 на L3-коммутаторы. В реальности будет дороже 2го варианта (возможно и 1го тоже), в лабораторной будет сложнее 1го и 2го вариантов. Но позволит подготовить архитектуру к масшатабированию и отработать на практике нужные операции. Остановимся на нем.
+
+
+
+## Базовая настройка SW12-13
+
+Осуществляем базовую настройку - hostname, stp, vlan, interfaces, SVI. LAG настраивать не будем - у SW4-5 не хватит свободных портов (остался один, оставим для расширения), между собой SW12-13 не должны общаться.
+
+SW12:
+
+```
+enable
+conf t
+hostname SW12
+
+spanning-tree mode rapid-pvst
+
+vtp mode off
+vlan 8
+name Native
+exit
+vlan 10
+name Operations
+exit
+vlan 40
+name Management
+exit
+vlan 70
+name Developers
+exit
+vlan 90
+name ParkingLot
+exit
+
+vlan 100
+name InterRouterTrunk
+exit
+
+
+
+int range e0/0-1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk native vlan 8
+switchport trunk allowed vlan 10,40,70
+no shutdown
+exit
+
+int range e0/2-3
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk native vlan 100
+no shutdown
+exit
+
+
+int range e1/0-3
+shutdown
+exit
+
+end
+wr
+```
+
+
+
+SW13:
+
+```
+enable
+conf t
+hostname SW13
+
+spanning-tree mode rapid-pvst
+
+vtp mode off
+vlan 8
+name Native
+exit
+vlan 10
+name Operations
+exit
+vlan 40
+name Management
+exit
+vlan 70
+name Developers
+exit
+vlan 90
+name ParkingLot
+exit
+
+vlan 100
+name InterRouterTrunk
+exit
+
+
+
+int range e0/0-1
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk native vlan 8
+switchport trunk allowed vlan 10,40,70
+no shutdown
+exit
+
+int range e0/2-3
+switchport trunk encapsulation dot1q
+switchport mode trunk
+switchport trunk native vlan 100
+no shutdown
+exit
+
+
+int range e1/0-3
+shutdown
+exit
+
+end
+wr
+```
+
+
+
+## Настраиваем SVI 10, 40, 70, 100
+
+Виртуальные интерфейсы нужны для межвлановой маршрутизации, включения dhcp и    OSPF. Попутно настраиваем HSRP.
+
+
+
+SW12:
+
+
+
+```
+
+en
+
+conf t
+
+int vlan 40
+ip address 10.177.40.2 255.255.255.0
+ipv6 address 2001:db8:177:40::2/64
+
+standby version 2
+standby 0 ip 10.177.40.1
+standby 1 ipv6 2001:DB8:177:40::1/64
+no shut
+exit
+
+int vlan 10
+ip address 10.177.10.2 255.255.255.0
+ipv6 address 2001:db8:177:10::2/64
+
+
+standby version 2
+standby 0 ip 10.177.10.1
+standby 1 ipv6 2001:DB8:177:10::1/64
+no shut
+exit
+
+int vlan 70
+ip address 10.177.70.2 255.255.255.0
+ipv6 address 2001:db8:177:70::2/64
+standby version 2
+standby 0 ip 10.177.70.1
+standby 1 ipv6 2001:DB8:177:70::1/64
+
+
+
+no shut
+exit
+
+
+int vlan 100
+ip address 10.177.255.2 255.255.255.248
+ipv6 address 2001:db8:177:255:0::2/80
+no shut
+exit
+
+
+ip routing
+
+no ip domain-lookup
+
+ipv6 unicast-routing
+
+
+
+ip dhcp excluded-address 10.177.10.1 10.177.10.100
+ip dhcp excluded-address 10.177.70.1 10.177.70.100
+
+ip dhcp pool POOL-VLAN-10
+network 10.177.10.0 255.255.255.0
+default-router 10.177.10.1 
+
+ip dhcp pool POOL-VLAN-70
+network 10.177.70.0 255.255.255.0
+default-router 10.177.70.1 
+
+
+
+end
+
+
+
+wr
+```
+
+
+
+
+
+
+
+SW13:
+
+```
+en
+
+conf t
+
+int vlan 40
+ip address 10.177.40.3 255.255.255.0
+ipv6 address 2001:db8:177:40::3/64
+standby version 2
+standby 0 ip 10.177.40.1
+standby 1 ipv6 2001:DB8:177:40::1/64
+
+no shut
+exit
+
+int vlan 10
+ip address 10.177.10.3 255.255.255.0
+ipv6 address 2001:db8:177:10::3/64
+standby version 2
+standby 0 ip 10.177.10.1
+standby 1 ipv6 2001:DB8:177:10::1/64
+
+no shut
+exit
+
+int vlan 70
+ip address 10.177.70.3 255.255.255.0
+ipv6 address 2001:db8:177:70::3/64
+standby version 2
+standby 0 ip 10.177.70.1
+standby 1 ipv6 2001:DB8:177:70::1/64
+
+no shut
+exit
+
+
+int vlan 100
+ip address 10.177.255.10 255.255.255.248
+ipv6 address 2001:db8:177:255:8::10/80
+no shut
+exit
+
+
+ip routing
+
+no ip domain-lookup
+
+ipv6 unicast-routing
+
+
+
+ip dhcp excluded-address 10.177.10.1 10.177.10.100
+ip dhcp excluded-address 10.177.70.1 10.177.70.100
+
+ip dhcp pool POOL-VLAN-10
+network 10.177.10.0 255.255.255.0
+default-router 10.177.10.1 
+
+ip dhcp pool POOL-VLAN-70
+network 10.177.70.0 255.255.255.0
+default-router 10.177.70.1 
+
+
+
+end
+
+
+
+wr
+```
+
+
+
+Аналогично проверке работы маршрутизаторов выполняем проверку работу L3-коммутаторов - выдачу dhcp, переход на резервный в случае неработоспособности текущего шлюза:
+
+![](screenshots/2021-05-12-00-58-44-image.png)
+
+## Настраиваем вышестоящие маршрутизаторы R14-15
+
+Поскольку интерфейсы каждого маршрутизатора подключены к SVI, то старого адресного пространства не хватает (4 адреса), поменяем адресацию. Также уберем виртуальные линки.
+
+
+
+R14:
+
+
+
+```
+en
+conf t
+
+router ospf 1
+no area 10 virtual-link 0.0.0.15
+
+interface Ethernet0/3
+no ip address 10.177.255.2 255.255.255.252
+ip address 10.177.255.26 255.255.255.252
+ ip ospf 1 area 101
+no ipv6 address 2001:DB8:177:255::2/80
+ ipv6 address 2001:DB8:177:255:24::26/80
+ ipv6 ospf 1 area 101
+
+
+int e0/0
+no ip address 10.177.255.5 255.255.255.252
+no ipv6 address 2001:DB8:177:255:4::5/80
+ip address 10.177.255.1 255.255.255.248
+ipv6 address 2001:DB8:177:255:0::1/80
+
+ip ospf 1 area 10
+ipv6 ospf 1 area 10
+
+
+
+interface Ethernet0/1
+ no ip address 10.177.255.9 255.255.255.252
+ ip address 10.177.255.9 255.255.255.248
+ ip ospf 1 area 10
+ no ipv6 address 2001:DB8:177:255:8::9/80
+ ipv6 address 2001:DB8:177:255:8::9/80
+ ipv6 ospf 1 area 10
+
+
+
+end
+
+wr
+clear ip ospf process
+
+```
+
+
+
+R15:
+
+```
+en
+conf t
+
+router ospf 1
+area 10 virtual-link 0.0.0.14
+
+interface Ethernet0/1
+no ip address 10.177.255.14 255.255.255.252
+ ip address 10.177.255.3 255.255.255.248
+no ipv6 address 2001:DB8:177:255:12::14/80
+ ipv6 address 2001:DB8:177:255:0::3/80
+ ipv6 ospf 1 area 10
+ ip ospf 1 area 10
+
+
+
+interface Ethernet0/0
+no ip address 10.177.255.17 255.255.255.252
+no ipv6 address 2001:DB8:177:255:16::17/80
+
+ip address 10.177.255.11 255.255.255.248
+ipv6 address 2001:DB8:177:255:8::11/80
+
+ ip ospf 1 area 10
+ ipv6 ospf 1 area 10
+
+
+end
+wr
+clear ip ospf process
+
+```
+
+
+
+
+
+## Включаем OSPF на SW12-13
+
+SW12:
+
+```
+en
+conf t
+router ospf 1
+router-id 10.0.0.12
+passive-interface default
+no passive-interface VLAN 40
+no passive-interface VLAN 100
+
+
+int vlan 40
+ip ospf 1 area 10
+ipv6 ospf 1 area 10
+int vlan 10
+ip ospf 1 area 10
+ipv6 ospf 1 area 10
+int vlan 70
+ip ospf 1 area 10
+ipv6 ospf 1 area 10
+int vlan 100
+ip ospf 1 area 10
+ipv6 ospf 1 area 10
+
+end
+wr
+```
+
+
+
+SW13:
+
+```
+en
+conf t
+router ospf 1
+router-id 10.0.0.13
+passive-interface default
+no passive-interface VLAN 40
+no passive-interface VLAN 100
+
+
+int vlan 40
+ip ospf 1 area 10
+ipv6 ospf 1 area 10
+int vlan 10
+ip ospf 1 area 10
+ipv6 ospf 1 area 10
+int vlan 70
+ip ospf 1 area 10
+ipv6 ospf 1 area 10
+int vlan 100
+ip ospf 1 area 10
+ipv6 ospf 1 area 10
+
+end
+wr
+```
+
+
+
+
+
+Смотрим результат на R14-15:
+
+![](screenshots/2021-05-12-01-35-16-image.png)
+
+Соседство установлено. Но выдается сообщение:
+
+
+```
+%OSPF-4-ERRRCV: Received invalid packet: mismatched area ID from backbone area from 10.177.255.11, Ethernet0/1
+```
+
+Строка говорит, что на R14 e0/1 приходит пакет от R15 с указанием AREA ID 0. Даже при отключении OSPF на интерфейсе R15 сообщение продолжается:
+
+![](screenshots/2021-05-12-01-46-46-image.png)
+
+Сообщение пропадает, если погасить R15 e0/0. И возникает снова. Хотя на SW13 (находится в том же широковещательном домене) такого сообщения не возникает.
+
+
+
+Настройки R14 e0/1:
+
+![](screenshots/2021-05-12-01-48-54-image.png)
+
+Настройки R15 e0/0:
+
+![](screenshots/2021-05-12-01-49-29-image.png)
+
+
+
+Настройки SW13 VLAN100:
+
+![](screenshots/2021-05-12-01-50-11-image.png)
