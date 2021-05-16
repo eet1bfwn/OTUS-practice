@@ -922,7 +922,7 @@ wr
 
 Схема:
 
-### ![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab04\screenshots\2021-04-24-15-20-44-image.png)
+### !screenshots\2021-04-24-15-20-44-image.png)
 
 ### Коммутаторы
 

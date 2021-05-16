@@ -1,0 +1,141 @@
+
+!
+! Last configuration change at 19:06:57 EET Sun May 16 2021
+!
+version 15.4
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname R18
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+clock timezone EET 2 0
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+!
+!
+!
+
+
+!
+!
+!
+!
+no ip domain lookup
+ip cef
+ipv6 unicast-routing
+ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+redundancy
+!
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Ethernet0/0
+ no shutdown
+ ip address 10.78.255.5 255.255.255.252
+ ipv6 address 2001:DB8:78:255:4::5/80
+!
+interface Ethernet0/1
+ no shutdown
+ ip address 10.78.255.2 255.255.255.252
+ ipv6 address 2001:DB8:78:255::2/80
+!
+interface Ethernet0/2
+ no shutdown
+ ip address 10.255.255.30 255.255.255.252
+ ipv6 address 2001:DB8:255:255:28::30/80
+!
+interface Ethernet0/3
+ no shutdown
+ ip address 10.255.255.34 255.255.255.252
+ ipv6 address 2001:DB8:255:255:32::34/80
+!
+!
+router eigrp NG
+ !
+ address-family ipv4 unicast autonomous-system 1
+  !
+  topology base
+   redistribute static
+  exit-af-topology
+  network 10.78.255.0 0.0.0.3
+  network 10.78.255.4 0.0.0.3
+  network 10.255.255.28 0.0.0.3
+  network 10.255.255.32 0.0.0.3
+  eigrp router-id 1.0.0.18
+ exit-address-family
+ !
+ address-family ipv6 unicast autonomous-system 1
+  !
+  topology base
+   redistribute static
+  exit-af-topology
+  eigrp router-id 1.0.0.18
+ exit-address-family
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+ip route 0.0.0.0 0.0.0.0 10.255.255.29
+ip route 0.0.0.0 0.0.0.0 10.255.255.33
+!
+ipv6 route ::/0 2001:DB8:255:255:32::33
+ipv6 route ::/0 2001:DB8:255:255:28::29
+!
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+!
+end

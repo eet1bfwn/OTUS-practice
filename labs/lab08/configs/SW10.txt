@@ -1,0 +1,152 @@
+
+!
+! Last configuration change at 18:06:55 EET Sun May 16 2021
+!
+version 15.2
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+service compress-config
+!
+hostname SW10
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+clock timezone EET 2 0
+!
+!
+!
+!
+!
+vtp mode off
+!
+!
+!
+ip cef
+no ipv6 cef
+!
+!
+!
+spanning-tree mode rapid-pvst
+spanning-tree extend system-id
+!
+vlan internal allocation policy ascending
+!
+vlan 8
+ name Native
+!
+vlan 10
+ name Operations
+!
+vlan 40
+ name Management
+!
+vlan 80
+ name Developers
+!
+vlan 90
+ name ParkingLot
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Port-channel1
+ no shutdown
+ switchport trunk allowed vlan 10,40,80
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+!
+interface Ethernet0/0
+ no shutdown
+ switchport trunk allowed vlan 10,40,80
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+ channel-group 1 mode active
+!
+interface Ethernet0/1
+ no shutdown
+ switchport trunk allowed vlan 10,40,80
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+ channel-group 1 mode active
+!
+interface Ethernet0/2
+ no shutdown
+ switchport access vlan 10
+ switchport mode access
+!
+interface Ethernet0/3
+ no shutdown
+ switchport trunk allowed vlan 10,40,80
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+!
+interface Ethernet1/0
+ no shutdown
+ switchport trunk allowed vlan 10,40,80
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 8
+ switchport mode trunk
+!
+interface Ethernet1/1
+ no shutdown
+ switchport access vlan 90
+ switchport mode access
+ shutdown
+!
+interface Ethernet1/2
+ no shutdown
+ switchport access vlan 90
+ switchport mode access
+ shutdown
+!
+interface Ethernet1/3
+ no shutdown
+ switchport access vlan 90
+ switchport mode access
+ shutdown
+!
+interface Vlan40
+ no shutdown
+ ip address 10.78.40.30 255.255.255.0
+ ipv6 address 2001:DB8:78:40::30/64
+!
+ip default-gateway 10.78.40.1
+ip forward-protocol nd
+!
+no ip http server
+no ip http secure-server
+!
+!
+!
+!
+!
+!
+control-plane
+!
+!
+line con 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+!
+!
+end
