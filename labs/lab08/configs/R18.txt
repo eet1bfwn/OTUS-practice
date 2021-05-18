@@ -1,6 +1,6 @@
 
 !
-! Last configuration change at 19:06:57 EET Sun May 16 2021
+! Last configuration change at 21:40:43 EET Tue May 18 2021
 !
 version 15.4
 service timestamps debug datetime msec
@@ -116,8 +116,8 @@ no ip http secure-server
 ip route 0.0.0.0 0.0.0.0 10.255.255.29
 ip route 0.0.0.0 0.0.0.0 10.255.255.33
 !
-ipv6 route ::/0 2001:DB8:255:255:32::33
-ipv6 route ::/0 2001:DB8:255:255:28::29
+ipv6 route ::/0 Ethernet0/3 2001:DB8:255:255:32::33
+ipv6 route ::/0 Ethernet0/2 2001:DB8:255:255:28::29
 !
 !
 !
