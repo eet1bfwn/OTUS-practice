@@ -110,15 +110,30 @@ router isis
 !
 router bgp 520
  bgp log-neighbor-changes
- network 10.52.255.4 mask 255.255.255.252
- network 10.52.255.8 mask 255.255.255.252
- network 10.255.255.28 mask 255.255.255.252
- network 10.255.255.36 mask 255.255.255.252
- aggregate-address 10.52.0.0 255.255.0.0 summary-only
- redistribute ospf 1
- redistribute isis level-1-2 metric 0
  neighbor 10.255.255.30 remote-as 2042
  neighbor 10.255.255.37 remote-as 301
+ neighbor 2001:DB8:255:255:28::30 remote-as 2042
+ neighbor 2001:DB8:255:255:36::37 remote-as 301
+ !
+ address-family ipv4
+  network 10.52.255.4 mask 255.255.255.252
+  network 10.52.255.8 mask 255.255.255.252
+  network 10.255.255.28 mask 255.255.255.252
+  network 10.255.255.36 mask 255.255.255.252
+  aggregate-address 10.52.0.0 255.255.0.0 summary-only
+  redistribute isis level-1-2 metric 0
+  neighbor 10.255.255.30 activate
+  neighbor 10.255.255.37 activate
+  no neighbor 2001:DB8:255:255:28::30 activate
+  no neighbor 2001:DB8:255:255:36::37 activate
+ exit-address-family
+ !
+ address-family ipv6
+  network 2001:DB8:177:255:28::/80
+  network 2001:DB8:255:255:36::/80
+  neighbor 2001:DB8:255:255:28::30 activate
+  neighbor 2001:DB8:255:255:36::37 activate
+ exit-address-family
 !
 ip forward-protocol nd
 !

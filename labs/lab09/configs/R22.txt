@@ -105,11 +105,27 @@ interface Ethernet1/3
 !
 router bgp 101
  bgp log-neighbor-changes
- network 10.255.255.0 mask 255.255.255.252
- network 10.255.255.8 mask 255.255.255.252
- network 10.255.255.12 mask 255.255.255.252
  neighbor 10.255.255.9 remote-as 1001
  neighbor 10.255.255.14 remote-as 301
+ neighbor 2001:DB8:255:255:8::9 remote-as 1001
+ neighbor 2001:DB8:255:255:12::14 remote-as 301
+ !
+ address-family ipv4
+  network 10.255.255.0 mask 255.255.255.252
+  network 10.255.255.8 mask 255.255.255.252
+  network 10.255.255.12 mask 255.255.255.252
+  neighbor 10.255.255.9 activate
+  neighbor 10.255.255.14 activate
+  no neighbor 2001:DB8:255:255:8::9 activate
+  no neighbor 2001:DB8:255:255:12::14 activate
+ exit-address-family
+ !
+ address-family ipv6
+  network 2001:DB8:255:255:8::/80
+  network 2001:DB8:255:255:12::/80
+  neighbor 2001:DB8:255:255:8::9 activate
+  neighbor 2001:DB8:255:255:12::14 activate
+ exit-address-family
 !
 ip forward-protocol nd
 !

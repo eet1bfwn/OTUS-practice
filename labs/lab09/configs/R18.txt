@@ -1,5 +1,7 @@
 
 !
+! Last configuration change at 23:23:01 EET Mon May 31 2021
+!
 version 15.4
 service timestamps debug datetime msec
 service timestamps log datetime msec
@@ -108,10 +110,29 @@ router eigrp NG
 !
 router bgp 2042
  bgp log-neighbor-changes
- aggregate-address 10.78.0.0 255.255.0.0 summary-only
- redistribute eigrp 1
  neighbor 10.255.255.29 remote-as 520
  neighbor 10.255.255.33 remote-as 520
+ neighbor 2001:DB8:255:255:28::29 remote-as 520
+ neighbor 2001:DB8:255:255:32::33 remote-as 520
+ !
+ address-family ipv4
+  aggregate-address 10.78.0.0 255.255.0.0 summary-only
+  redistribute eigrp 1
+  neighbor 10.255.255.29 activate
+  neighbor 10.255.255.33 activate
+  no neighbor 2001:DB8:255:255:28::29 activate
+  no neighbor 2001:DB8:255:255:32::33 activate
+ exit-address-family
+ !
+ address-family ipv6
+  network 2001:DB8:78:255::/80
+  network 2001:DB8:78:255:4::/80
+  network 2001:DB8:255:255:28::/80
+  network 2001:DB8:255:255:32::/80
+  aggregate-address 2001:DB8:78::/48 summary-only
+  neighbor 2001:DB8:255:255:28::29 activate
+  neighbor 2001:DB8:255:255:32::33 activate
+ exit-address-family
 !
 ip forward-protocol nd
 !

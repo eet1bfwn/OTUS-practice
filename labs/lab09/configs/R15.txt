@@ -1,6 +1,6 @@
 
 !
-! Last configuration change at 19:53:49 EET Sun May 23 2021
+! Last configuration change at 23:22:49 EET Mon May 31 2021
 !
 version 15.4
 service timestamps debug datetime msec
@@ -116,13 +116,33 @@ router ospf 1
 !
 router bgp 1001
  bgp log-neighbor-changes
- network 10.177.0.0 mask 255.255.0.0
- network 10.255.255.16 mask 255.255.255.252
- aggregate-address 10.177.0.0 255.255.0.0 summary-only
- redistribute ospf 1
- neighbor 10.255.255.1 remote-as 1001
- neighbor 10.255.255.9 remote-as 1001
+ neighbor 10.177.255.1 remote-as 1001
+ neighbor 10.177.255.9 remote-as 1001
  neighbor 10.255.255.18 remote-as 301
+ neighbor 2001:DB8:177:255::1 remote-as 1001
+ neighbor 2001:DB8:177:255:8::9 remote-as 1001
+ neighbor 2001:DB8:255:255:16::18 remote-as 301
+ !
+ address-family ipv4
+  network 10.255.255.8 mask 255.255.255.248
+  aggregate-address 10.177.0.0 255.255.0.0 summary-only
+  neighbor 10.177.255.1 activate
+  neighbor 10.177.255.9 activate
+  neighbor 10.255.255.18 activate
+  no neighbor 2001:DB8:177:255::1 activate
+  no neighbor 2001:DB8:177:255:8::9 activate
+  no neighbor 2001:DB8:255:255:16::18 activate
+ exit-address-family
+ !
+ address-family ipv6
+  network 2001:DB8:177:255::/80
+  network 2001:DB8:177:255:8::/80
+  network 2001:DB8:255:255:16::/80
+  aggregate-address 2001:DB8:177::/48 summary-only
+  neighbor 2001:DB8:177:255::1 activate
+  neighbor 2001:DB8:177:255:8::9 activate
+  neighbor 2001:DB8:255:255:16::18 activate
+ exit-address-family
 !
 ip forward-protocol nd
 !
