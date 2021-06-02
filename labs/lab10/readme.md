@@ -117,7 +117,7 @@ wr
 ```
 
 Соседство установлено, маршруты получены от соседа по iBGP:
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-01-22-16-49-image.png)
+![](screenshots/2021-06-01-22-16-49-image.png)
 
 Что мы видим из Local RIB? 
 
@@ -164,17 +164,17 @@ wr
 
 Теперь таблица Local RIB изменилась:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-01-22-29-48-image.png)
+![](screenshots/2021-06-01-22-29-48-image.png)
 
 Выход в другие автономные системы стал возможен и через соседа по зоне - он стал следующим хопом.
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-01-22-40-14-image.png)
+![](screenshots/2021-06-01-22-40-14-image.png)
 
 Проблема в R15 - он не анонсирует сеть 10.177.0.0/16. И видит выход в эту сеть не через себя, а соседа.
 
 Проверяем конфиг:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-01-22-47-52-image.png)
+![](screenshots/2021-06-01-22-47-52-image.png)
 
 Все верно, R15 анонсирует сеть 10.177.10.0 255.255.255.248. Такой сети в таблице у него нет - неправильно указана маска, должна быть 255.255.255.0. Исправляем.
 
@@ -193,13 +193,13 @@ wr
 
 Все стало как требуется:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-01-22-58-14-image.png)
+![](screenshots/2021-06-01-22-58-14-image.png)
 
 Стоит обратить внимание на AD iBGP. Что будет с таким сценарием - сосед транслирует несуммаризованный маршрут по BPG, этот маршут принимается и вытесняет OSPF, который более оптимальный/актуальный. Но вытеснения не будет - AD iBGP 200, в отличие от eBPG c 20. Все логично.
 
 Также проверим таблицу ipv6:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-01-23-10-13-image.png)
+![](screenshots/2021-06-01-23-10-13-image.png)
 
 Оба маршрутизатора знают, что во внешние автономные системы можно выйти через соседа. Правда, это не лучший маршрут, и он не попадает в таблицу.
 
@@ -457,23 +457,23 @@ wr
 
 Смотрим соседство:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-01-23-50-34-image.png)
+![](screenshots/2021-06-01-23-50-34-image.png)
 
 Соседство поднялось.
 
 ipv6:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-01-23-51-19-image.png)
+![](screenshots/2021-06-01-23-51-19-image.png)
 
 Также просмотрим маршруты:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-02-00-11-53-image.png)
+![](screenshots/2021-06-02-00-11-53-image.png)
 
 Мы видим, что в BGP есть маршруты до Москвы, СПб и линков между автономными системами. Т.е. сети из пространства Триады мы даже не анонсируем наружу. Если захотим - запустить анонс сети мы можем только на одном маршрутизаторе - сеть попадет в процесс BGP, будет анонсирована всем соседям. За счет суммаризации этот анонс может быть расширен до всего адресного пространства Триады. Так делать не стоит, и лучше выполнить анонс на каждом маршрутизаторе??? А если анонсировать, то следует исключить лупэки??? Фильтрацией либо выделением их в отдельную сеть, не попадающую по суммаризацию???
 
 Посмотрим в СПб, какие приходят ему маршуты:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-02-00-28-28-image.png)
+![](screenshots/2021-06-02-00-28-28-image.png)
 
 Почему-то пришли лупбэки Триады и сети внутренних линков. Почему? Потому что мы инжектировали в BGP IS-IS. Так делать не нужно. Причем команда network для анонса не нужна.
 
@@ -489,7 +489,7 @@ ipv6:
 
 Сейчас трафик может идти через Киторн, пример:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-02-01-10-05-image.png)
+![](screenshots/2021-06-02-01-10-05-image.png)
 
 ![](screenshots/2021-05-31-00-52-28-image.png)
 
@@ -508,7 +508,7 @@ wr
 
 Результат:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-02-01-11-35-image.png)
+![](screenshots/2021-06-02-01-11-35-image.png)
 
 Все маршруты проходят через R15 и далее в Ламас.
 
@@ -544,7 +544,7 @@ wr
 
 ### Настройте офиса С.-Петербург так, чтобы трафик до любого офиса распределялся по двум линкам одновременно
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-02-01-20-46-image.png)
+![](screenshots/2021-06-02-01-20-46-image.png)
 
 Сперва отключим статические маршруты из СПб через провайдера.
 
@@ -569,7 +569,7 @@ wr
 
 Теперь проверим, как пойдут пакет до Москвы:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-02-01-29-19-image.png)
+![](screenshots/2021-06-02-01-29-19-image.png)
 
 Через один линк - R24. Поскольку в таблице RIB может быть один маршрут, который затем поместится и в таблицу маршрутизации.
 
@@ -588,10 +588,10 @@ wr
 
 Результат:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-02-01-32-32-image.png)
+![](screenshots/2021-06-02-01-32-32-image.png)
 
 При проверке с R16-17 в СПб трафик все время проходил через 10.255.255.33. Но если выполнить с компьютеров:
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab10\screenshots\2021-06-02-01-39-33-image.png) 
+![](screenshots/2021-06-02-01-39-33-image.png) 
 
 Балансировка идет через разные выходные линки из СПб.
 
