@@ -1,0 +1,259 @@
+
+!
+! Last configuration change at 22:10:09 MSK Wed Jun 2 2021
+!
+version 15.4
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname R28
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+clock timezone MSK 3 0
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+!
+!
+!
+
+
+!
+ip dhcp excluded-address 10.14.40.1
+ip dhcp excluded-address 10.14.30.1
+ip dhcp excluded-address 10.14.31.1
+ip dhcp excluded-address 10.14.40.1 10.14.40.100
+ip dhcp excluded-address 10.14.30.1 10.14.30.100
+ip dhcp excluded-address 10.14.31.1 10.14.31.100
+!
+ip dhcp pool R28-VLAN30
+ network 10.14.30.0 255.255.255.0
+ default-router 10.14.30.1 
+!
+ip dhcp pool R28-VLAN31
+ network 10.14.31.0 255.255.255.0
+ default-router 10.14.31.1 
+!
+!
+!
+ip cef
+ipv6 unicast-routing
+ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+redundancy
+!
+!
+track 1 ip sla 1 reachability
+!
+track 2 ip sla 2 reachability
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Ethernet0/0
+ no shutdown
+ description ISP_0
+ ip address 10.255.255.26 255.255.255.252
+ ip nat outside
+ ip virtual-reassembly in
+ ipv6 address FE80::2 link-local
+ ipv6 address 2001:DB8:255:255:24::26/80
+!
+interface Ethernet0/1
+ no shutdown
+ description ISP_1
+ ip address 10.255.255.22 255.255.255.252
+ ip nat outside
+ ip virtual-reassembly in
+ ipv6 address FE80::2 link-local
+ ipv6 address 2001:DB8:255:255:20::22/80
+!
+interface Ethernet0/2
+ no shutdown
+ description LAN
+ no ip address
+!
+interface Ethernet0/2.30
+ no shutdown
+ description LAN_VLAN30
+ encapsulation dot1Q 30
+ ip address 10.14.30.1 255.255.255.0
+ ip nat inside
+ ip virtual-reassembly in
+ ip policy route-map ISP-BALANCING
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:DB8:14:30::1/64
+!
+interface Ethernet0/2.31
+ no shutdown
+ description LAN_VLAN31
+ encapsulation dot1Q 31
+ ip address 10.14.31.1 255.255.255.0
+ ip nat inside
+ ip virtual-reassembly in
+ ip policy route-map ISP-BALANCING
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:DB8:14:31::1/64
+!
+interface Ethernet0/2.40
+ no shutdown
+ description LAN_Management
+ encapsulation dot1Q 40
+ ip address 10.14.40.1 255.255.255.0
+ ip nat inside
+ ip virtual-reassembly in
+ ip policy route-map ISP-BALANCING
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:DB8:14:40::1/64
+!
+interface Ethernet0/3
+ no shutdown
+ no ip address
+ shutdown
+!
+interface Ethernet1/0
+ no shutdown
+ no ip address
+ shutdown
+!
+interface Ethernet1/1
+ no shutdown
+ no ip address
+ shutdown
+!
+interface Ethernet1/2
+ no shutdown
+ no ip address
+ shutdown
+!
+interface Ethernet1/3
+ no shutdown
+ no ip address
+ shutdown
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+ip nat inside source route-map NAT_ISP0 interface Ethernet0/0 overload
+ip nat inside source route-map NAT_ISP1 interface Ethernet0/1 overload
+ip route 0.0.0.0 0.0.0.0 10.255.255.25 name ISP0 track 1
+ip route 0.0.0.0 0.0.0.0 10.255.255.21 name ISP1 track 2
+ip route 0.0.0.0 0.0.0.0 Ethernet0/1 10.255.255.21
+ip route 0.0.0.0 0.0.0.0 Ethernet0/0 10.255.255.25
+!
+ip access-list standard NAT
+ permit 10.14.0.0 0.0.255.255
+ip access-list standard SUBNET-EVEN
+ permit 10.14.0.0 0.0.254.255
+ip access-list standard SUBNET-ODD
+ permit 10.14.1.0 0.0.254.255
+!
+ip sla 1
+ icmp-echo 10.52.255.1 source-interface Ethernet0/0
+ frequency 10
+ip sla schedule 1 life forever start-time now
+ip sla 2
+ icmp-echo 10.52.255.1 source-interface Ethernet0/1
+ frequency 10
+ip sla schedule 2 life forever start-time now
+ipv6 route ::/0 Ethernet0/0 2001:DB8:255:255:24::25
+ipv6 route ::/0 Ethernet0/1 2001:DB8:255:255:20::21
+!
+route-map ISP-BALANCING permit 10
+ match ip address SUBNET-ODD
+ set ip next-hop 10.255.255.25
+!
+route-map ISP-BALANCING permit 20
+ match ip address SUBNET-EVEN
+ set ip next-hop 10.255.255.21
+!
+route-map NAT_ISP0 permit 10
+ match ip address NAT
+ match interface Ethernet0/0
+!
+route-map NAT_ISP1 permit 10
+ match ip address NAT
+ match interface Ethernet0/1
+!
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+event manager applet ISP0_DOWN
+ event track 1 state down
+ action 001 cli command "enable"
+ action 002 cli command "conf t"
+ action 003 cli command "no route-map ISP-BALANCING permit 10"
+ action 004 cli command "end"
+event manager applet ISP1_DOWN
+ event track 2 state down
+ action 001 cli command "enable"
+ action 002 cli command "conf t"
+ action 003 cli command "no route-map ISP-BALANCING permit 20"
+ action 004 cli command "end"
+event manager applet ISP0_UP
+ event track 1 state up
+ action 001 cli command "enable"
+ action 002 cli command "conf t"
+ action 003 cli command "route-map ISP-BALANCING permit 10"
+ action 004 cli command "match ip address SUBNET-ODD"
+ action 005 cli command "set ip next-hop 10.255.255.25"
+ action 006 cli command "end"
+event manager applet ISP1_UP
+ event track 2 state up
+ action 001 cli command "enable"
+ action 002 cli command "conf t"
+ action 003 cli command "route-map ISP-BALANCING permit 20"
+ action 004 cli command "match ip address SUBNET-EVEN"
+ action 005 cli command "set ip next-hop 10.255.255.21"
+ action 006 cli command "end"
+!
+end
