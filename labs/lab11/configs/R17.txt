@@ -1,0 +1,242 @@
+
+!
+version 15.4
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname R17
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+clock timezone EET 2 0
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+!
+!
+!
+
+
+!
+ip dhcp excluded-address 10.78.10.1 10.78.10.100
+ip dhcp excluded-address 10.78.80.1 10.78.80.100
+!
+ip dhcp pool POOL-VLAN-10
+ network 10.78.10.0 255.255.255.0
+ default-router 10.78.10.1 
+!
+ip dhcp pool POOL-VLAN-80
+ network 10.78.80.0 255.255.255.0
+ default-router 10.78.80.1 
+!
+!
+!
+no ip domain lookup
+ip cef
+ipv6 unicast-routing
+ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+redundancy
+!
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+bridge irb
+!
+!
+!
+!
+interface Ethernet0/0
+ no shutdown
+ no ip address
+!
+interface Ethernet0/0.8
+ no shutdown
+ encapsulation dot1Q 8 native
+ bridge-group 8
+!
+interface Ethernet0/0.10
+ no shutdown
+ encapsulation dot1Q 10
+ bridge-group 10
+!
+interface Ethernet0/0.40
+ no shutdown
+ encapsulation dot1Q 40
+ bridge-group 40
+!
+interface Ethernet0/0.80
+ no shutdown
+ encapsulation dot1Q 80
+ bridge-group 80
+!
+interface Ethernet0/1
+ no shutdown
+ ip address 10.78.255.1 255.255.255.252
+ ipv6 address 2001:DB8:78:255::1/80
+!
+interface Ethernet0/2
+ no shutdown
+ no ip address
+!
+interface Ethernet0/2.8
+ no shutdown
+ encapsulation dot1Q 8 native
+ bridge-group 8
+!
+interface Ethernet0/2.10
+ no shutdown
+ encapsulation dot1Q 10
+ bridge-group 10
+!
+interface Ethernet0/2.40
+ no shutdown
+ encapsulation dot1Q 40
+ bridge-group 40
+!
+interface Ethernet0/2.80
+ no shutdown
+ encapsulation dot1Q 80
+ bridge-group 80
+!
+interface Ethernet0/3
+ no shutdown
+ no ip address
+ shutdown
+!
+interface BVI10
+ no shutdown
+ ip address 10.78.10.2 255.255.255.0
+ standby version 2
+ standby 0 ip 10.78.10.1
+ standby 0 priority 255
+ standby 0 preempt
+ standby 1 ipv6 2001:DB8:78:10::1/64
+ ipv6 address 2001:DB8:78:10::2/64
+!
+interface BVI40
+ no shutdown
+ ip address 10.78.40.2 255.255.255.0
+ standby version 2
+ standby 0 ip 10.78.40.1
+ standby 0 priority 255
+ standby 0 preempt
+ standby 1 ipv6 2001:DB8:78:40::1/64
+ ipv6 address 2001:DB8:78:40::2/64
+!
+interface BVI80
+ no shutdown
+ ip address 10.78.80.2 255.255.255.0
+ standby version 2
+ standby 0 ip 10.78.80.1
+ standby 0 priority 255
+ standby 0 preempt
+ standby 1 ipv6 2001:DB8:78:80::1/64
+ ipv6 address 2001:DB8:78:80::2/64
+!
+!
+router eigrp NG
+ !
+ address-family ipv4 unicast autonomous-system 1
+  !
+  af-interface BVI10
+   passive-interface
+  exit-af-interface
+  !
+  af-interface BVI80
+   passive-interface
+  exit-af-interface
+  !
+  af-interface Ethernet0/1
+   summary-address 10.78.0.0 255.255.0.0
+  exit-af-interface
+  !
+  topology base
+  exit-af-topology
+  network 10.78.10.0 0.0.0.255
+  network 10.78.40.0 0.0.0.255
+  network 10.78.80.0 0.0.0.255
+  network 10.78.255.0 0.0.0.3
+  eigrp router-id 1.0.0.17
+ exit-address-family
+ !
+ address-family ipv6 unicast autonomous-system 1
+  !
+  af-interface BVI10
+   passive-interface
+  exit-af-interface
+  !
+  af-interface BVI80
+   passive-interface
+  exit-af-interface
+  !
+  af-interface Ethernet0/1
+   summary-address 2001:DB8:78::/48
+  exit-af-interface
+  !
+  topology base
+  exit-af-topology
+  eigrp router-id 1.0.0.17
+ exit-address-family
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+!
+!
+!
+!
+control-plane
+!
+bridge 10 protocol ieee
+bridge 10 route ip
+bridge 40 protocol ieee
+bridge 40 route ip
+bridge 80 protocol ieee
+bridge 80 route ip
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+!
+end

@@ -1,0 +1,183 @@
+
+!
+! Last configuration change at 21:46:23 MSK Wed Jun 2 2021
+!
+version 15.4
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname R23
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+clock timezone MSK 3 0
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+!
+!
+!
+
+
+!
+!
+!
+!
+no ip domain lookup
+ip cef
+ipv6 unicast-routing
+ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+redundancy
+!
+!
+! 
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ no shutdown
+ ip address 10.52.254.23 255.255.255.255
+ ip router isis 
+ ipv6 address 2001:DB8:52:254::23/128
+ ipv6 router isis 
+!
+interface Ethernet0/0
+ no shutdown
+ ip address 10.255.255.2 255.255.255.252
+ ipv6 address FE80::2 link-local
+ ipv6 address 2001:DB8:255:255::2/80
+!
+interface Ethernet0/1
+ no shutdown
+ ip address 10.52.255.1 255.255.255.252
+ ip router isis 
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:DB8:52:255::1/80
+ ipv6 router isis 
+!
+interface Ethernet0/2
+ no shutdown
+ ip address 10.52.255.9 255.255.255.252
+ ip router isis 
+ ipv6 address FE80::1 link-local
+ ipv6 address 2001:DB8:52:255:8::9/80
+ ipv6 router isis 
+!
+interface Ethernet0/3
+ no shutdown
+ no ip address
+ shutdown
+!
+interface Ethernet1/0
+ no shutdown
+ no ip address
+ shutdown
+!
+interface Ethernet1/1
+ no shutdown
+ no ip address
+ shutdown
+!
+interface Ethernet1/2
+ no shutdown
+ no ip address
+ shutdown
+!
+interface Ethernet1/3
+ no shutdown
+ no ip address
+ shutdown
+!
+router isis
+ net 49.2222.0023.0023.0023.00
+ is-type level-2-only
+!
+router bgp 520
+ bgp log-neighbor-changes
+ neighbor RRSERVER peer-group
+ neighbor RRSERVER remote-as 520
+ neighbor RRSERVER update-source Loopback0
+ neighbor RRSERVER6 peer-group
+ neighbor RRSERVER6 remote-as 520
+ neighbor RRSERVER6 update-source Loopback0
+ neighbor 10.52.254.25 peer-group RRSERVER
+ neighbor 10.52.254.26 peer-group RRSERVER
+ neighbor 10.255.255.1 remote-as 101
+ neighbor 2001:DB8:52:254::25 peer-group RRSERVER6
+ neighbor 2001:DB8:52:254::26 peer-group RRSERVER6
+ !
+ address-family ipv4
+  network 10.255.255.0 mask 255.255.255.252
+  neighbor RRSERVER next-hop-self
+  neighbor 10.52.254.25 activate
+  neighbor 10.52.254.26 activate
+  neighbor 10.255.255.1 activate
+  no neighbor 2001:DB8:52:254::25 activate
+  no neighbor 2001:DB8:52:254::26 activate
+ exit-address-family
+ !
+ address-family ipv6
+  network 2001:DB8:255:255::/80
+  neighbor RRSERVER6 next-hop-self
+  neighbor 2001:DB8:52:254::25 activate
+  neighbor 2001:DB8:52:254::26 activate
+ exit-address-family
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+!
+!
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+!
+end
