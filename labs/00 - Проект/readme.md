@@ -4,13 +4,13 @@
 
 1. Общая схема:
    
-   ![](C:\Users\lda2\Documents\Network%20Engineer\OTUS\00%20-%20Проект\screenshots\2021-06-05-17-50-14-image.png)
+![](screenshots/2021-06-05-17-50-14-image.png)
    
    Можем ли мы разделить автономную систему 9001 на 2 географические области?
 
 2. Сеть из 3 провайдеров.
    
-   ![](C:\Users\lda2\Documents\Network%20Engineer\OTUS\00%20-%20Проект\screenshots\2021-06-05-17-33-50-image.png)
+![](screenshots/2021-06-05-17-33-50-image.png)
    
    1. Каждый провайдер имеет свою автономную систему.
    
@@ -20,7 +20,7 @@
 
 3. Сеть центрального офиса компании GrowWide.
    
-   ![](C:\Users\lda2\Documents\Network%20Engineer\OTUS\00%20-%20Проект\screenshots\2021-06-05-17-34-28-image.png)
+![](screenshots/2021-06-05-17-34-28-image.png)
    
    1. Компания владеет своей автономной системой.
    
@@ -38,7 +38,7 @@
 
 4. Сеть в дата-центре 
    
-   ![](C:\Users\lda2\Documents\Network%20Engineer\OTUS\00%20-%20Проект\screenshots\2021-06-05-17-46-36-image.png)
+![](screenshots/2021-06-05-17-46-36-image.png)
    
    1. Подключение через двух провайдеров.
    
@@ -48,14 +48,14 @@
 
 5. Сеть необольшого регионального офиса без автономной системы.
    
-   ![](C:\Users\lda2\Documents\Network%20Engineer\OTUS\00%20-%20Проект\screenshots\2021-06-05-17-47-46-image.png)
+![](screenshots/2021-06-05-17-47-46-image.png)
    
    1. Выход через два линка. 
    2. Site-to-Site VPN.
 
 6. Сеть еще одного небольшого офиса с уже использующейся в остальной сети адресацией.
    
-   ![](C:\Users\lda2\Documents\Network%20Engineer\OTUS\00%20-%20Проект\screenshots\2021-06-05-17-48-07-image.png)
+![](screenshots/2021-06-05-17-48-07-image.png)
    
    1. Реализация случая, когда нужно объединить в подсети с одинаковой адресацией.
    
