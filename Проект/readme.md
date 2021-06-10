@@ -6,7 +6,7 @@
 
    Мы имеем 3 провайдера, основной офис, дата-центр и два небольших удаленных офиса. Общая схема следующая:
 
-![](screenshots/2021-06-05-17-50-14-image.png)
+![](screenshots/2021-06-09-23-46-02-image.png)
 
    Можем ли мы разделить автономную систему 9001 на 2 географические области?
 
@@ -14,7 +14,7 @@
 
 ## Сеть из 3 провайдеров.
 
-![](screenshots/2021-06-05-17-33-50-image.png)
+![](screenshots/2021-06-09-23-46-46-image.png)
 
 1. Каждый провайдер имеет свою автономную систему.
 
@@ -24,7 +24,7 @@
 
 ## Сеть центрального офиса компании GrowWide.
 
-![](screenshots/2021-06-05-17-34-28-image.png)
+![](screenshots/2021-06-09-23-47-51-image.png)
 
 1. Компания владеет своей автономной системой.
 
@@ -69,7 +69,7 @@
 
 ## DHCP
 
-1. Вариант 1. Сделать централизованный DHCP-сервер.
+1. Вариант - сделать централизованный DHCP-сервер в центральном офисе.
    
    1. При потере связи с центральным офисом клиенты в регионах не получат адресов.
    
@@ -80,30 +80,22 @@
    4. В этом случае в регионах по умолчанию DHCP отключен. Отслеживается основной DHCP и при его недоступности включается резервный.
    
    5. Вариант для курсовой интересный.
-
-2. Альтернативынй вариант 2. В каждом офисе свой DHCP-сервер.
    
-   1. Нет зависимости от внешних каналов.
-   
-   2. Нет центральной точки со всей информацией.
-   
-   3. Но можно реализовать сбор через центральный SYSLOG-сервер.
+   # Этапы достижения результата
 
-# Этапы достижения результата
+2. Формирование схемы всей сети.
 
-1. Формирование схемы всей сети.
+3. Адресация устройств, сегментов.
 
-2. Адресация устройств, сегментов.
+4. Назначение сетевым устройставам адресов управления.
 
-3. Назначение сетевым устройставам адресов управления.
+5. Настройка устройств провайдеров.
 
-4. Настройка устройств провайдеров.
+6. Настройка устройств центрального офиса.
 
-5. Настройка устройств центрального офиса.
+7. Настройка устройств дата-центра.
 
-6. Настройка устройств дата-центра.
-
-7. Разрешение для управления только через определенные интерфейсы и с определенных устройств.
+8. Разрешение для управления только через определенные интерфейсы и с определенных устройств.
 
 # Реализация
 
@@ -214,7 +206,6 @@
 | ------------- | -------------- | -------- | ------ |
 | 00001010.1100 | 1111.000       | 00000.00 | 000000 |
 
-
 И далее, если мы хотим узнать адрес отдела 124, то мы должны в адресе в поле отдела сформировать число 123:
 
 | Зафиксировано | Коммутатор 121 | Отдел    | Хост   |
@@ -226,3 +217,1154 @@
 ### Вывод
 
 Сформирована адресация с учетом суммаризации подсетей на коммутаторах. Также есть возможность с помощью Wildcard-маски выделить один отдел, устройства которого подключены к разным коммутаторам.
+
+# Настройка устройств в центральном офисе
+
+## Описание
+
+![](screenshots/2021-06-10-00-24-46-image.png)
+
+В офисе 10 этажей, на каждом этаже по 5 коммутаторов доступа и одному коммутатору распределения. Их все размещать на схеме не будем. Отобразим лишь этажи 5, 6, 7 с 1-2 коммутаторами.
+
+На 5м этаже расположены коммутаторы 21 и 22.
+
+На 6м этаже расположены коммутаторы 27 и 28.
+
+На 7м этаже расположен коммутатор 35.
+
+Также будем подключать не все рабочие места и отделы. Ограничимся HR, бухгалтерией, Wi-Fi, серверами.
+
+К коммутатору 21 подключено:
+
+- 2 компьютера HR в одной подсети.
+
+- Один компьютер бухгалтерии в другой подсети.
+
+К коммутатору 22 подключен:
+
+- Один компьютер HR в отдельной подсети.
+
+- Wi-Fi точка. Для простоты на схеме представим ее компьютером, коммутировать Wi-Fi-клиентов он не будет, только получать доступ к сети.
+
+К коммутатору 27 подключен:
+
+- Один компьютер HR в отдельной подсети.
+
+- Один компьютер ACC в отдельной подсети.
+  
+  К коммутатору 28 подключена:
+
+- Wi-Fi точка. Для простоты на схеме представим ее компьютером, коммутировать Wi-Fi-клиентов он не будет, только получать доступ к сети.
+
+К коммутатору 35 подключены:
+
+- Сервер печати в отдельной подсети.
+
+- Сервер IP-телефонии в отдельной подсети.
+
+## Распределение адресации
+
+Исходя из разработанной ранее методики сформируем адреса сетей, в которых будут устройства.
+
+![](screenshots/2021-06-10-00-25-55-image.png)
+
+Для этого воспользуемся составленной ранее таблицей.
+
+
+
+Коммутатор 21: 0010100
+
+Коммутатор 22: 0010.101
+
+Коммутатор 27: 0011.010
+
+Коммутатор 28: 0011.011
+
+Коммутатор 35: 0100.010
+
+
+
+Отдел 23:   00101.10
+
+Отдел 36:   01000.11
+
+Отдел 65:   10000.00
+
+Отдел 100: 11000.11
+
+Отдел 101: 11001.00
+
+
+
+| Зафиксировано | Коммутатор | Отдел    | Хост   |
+| ------------- | ---------- | -------- | ------ |
+| 00001010.1100 | 0000.000   | 00000.00 | 000000 |
+
+
+
+| Коммутатор                               | Access-Floor-5-21 | Access-Floor-5-22 | Access-Floor-6-27 | Access-Floor-6-28 | Access-Floor-7-35 |
+| ---------------------------------------- | ----------------- | ----------------- | ----------------- | ----------------- | ----------------- |
+| Суммарная сеть за коммутатором           | 10.194.128.0/19   | 10.194.160.0/19   | 10.195.64.0/19    | 10.195.96.0/19    | 10.196.64.0/19    |
+| Сеть устройства HR-21-1 (Отдел 23)       | 10.194.133.128/26 | ---               | ---               | ---               | ---               |
+| Сеть устройства HR-21-2 (Отдел 23)       | 10.194.133.128/26 | ---               | ---               | ---               | ---               |
+| Сеть устройства Acc-21-1 (Отдел 36)      | 10.194.136.192/26 | ---               | ---               | ---               | ---               |
+| Сеть устройства HR-22-1 (Отдел 23)       | ---               | 10.194.165.128/26 | ---               | ---               | ---               |
+| Сеть устройства Wi-Fi-22 (Отдел 65)      | ---               | 10.194.176.0/26   | ---               | ---               | ---               |
+| Сеть устройства HR-27-1 (Отдел 23)       | ---               | ---               | 10.195.69.128/26  | ---               | ---               |
+| Сеть устройства Acc-27-1 (Отдел 36)      | ---               | ---               | 10.195.72.192/26  | ---               | ---               |
+| Сеть устройства Wi-Fi-28 (Отдел 65)      | ---               | ---               | ---               | 10.195.112.0/26   | ---               |
+| Сеть устройства Srv-Print-35 (Отдел 100) | ---               | ---               | ---               | ---               | 10.196.88.192/26  |
+| Сеть устройства Srv-Voice-35 (Отдел 101) | ---               | ---               | ---               | ---               | 10.196.89.0/26    |
+
+Наносим адресацию на схему. Первый возможный адрес подсети /26 присваиваем L3-коммутатору.
+
+
+
+![](screenshots/2021-06-10-20-44-30-image.png)
+
+
+
+
+
+## Адресация сетевых устройств.
+
+Коммутаторы на одном этаже между собой связывать не будем. Такие дополнительные связи были бы полезны, если между этими коммутаторами гулял трафик, т.е. трафик между клиентами. Это редкий случай, поэтому добавлять лишние связи не будем.
+
+
+
+На седьмом этаже находятся серверы, поэтому коммутатор доступа подключен к коммутаторам распределения агрегированным линком. ???Сработает ли на стенде???
+
+
+
+Для связи устройств будем брать сеть с маской 31.
+
+Для напоминания, сеть конечных устройств имеет диапазон 10.192.0.0-10.207.255.255. Поэтому начинаем формировать сети /31, начиная с адреса 10.208.0.0. На схеме не указаны первые три октета, чтобы не занимать лишнее место.
+
+![](screenshots/2021-06-10-21-19-08-image.png)
+
+-----
+
+Далее идет практическая реализация. В дальнейшем будет разделение на отдельные файлы с оглавлением. Сейчас - все в одном файле.
+
+------
+
+### Базовая настройка сетевых устройств.
+
+Переведем коммутаторы в режим L3, настроим на коммутаторах и маршрутизаторах агрегацию, физические порты.
+
+
+
+
+
+Access-Floor-5-21:
+
+```
+en
+conf t
+hostname Access-Floor-5-21
+ip routing
+int e0/0
+no switchport
+ip addr 10.208.0.0 255.255.255.254
+int e1/0
+no switchport
+ip addr 10.208.0.2 255.255.255.254
+no shut
+end
+wr
+```
+
+
+
+
+
+Access-Floor-5-22:
+
+```
+en
+conf t
+hostname Access-Floor-5-22
+ip routing
+int e0/0
+no switchport
+ip addr 10.208.0.5 255.255.255.254
+no shut
+int e0/2
+no switchport
+ip addr 10.208.0.14 255.255.255.254
+no shut
+end
+wr
+```
+
+
+
+
+
+
+
+
+
+Access-Floor-6-27:
+
+```
+en
+conf t
+hostname Access-Floor-6-27
+ip routing
+int e0/0
+no switchport
+ip addr 10.208.0.22 255.255.255.254
+no shut
+int e0/3
+no switchport
+ip addr 10.208.0.32 255.255.255.254
+no shut
+end
+wr
+```
+
+
+
+
+
+
+
+Access-Floor-6-28:
+
+```
+en
+conf t
+hostname Access-Floor-6-28
+ip routing
+int e0/0
+no switchport
+ip addr 10.208.0.29 255.255.255.254
+no shut
+int e0/3
+no switchport
+ip addr 10.208.0.34 255.255.255.254
+no shut
+end
+wr
+```
+
+
+
+Access-Floor-7-35:
+
+```
+en
+conf t
+hostname Access-Floor-7-35
+ip routing
+int range e1/0-1
+no switchport
+channel-group 1 mode active
+int po1
+ip addr 10.208.0.31 255.255.255.254
+int range e0/0, e0/3
+no switchport
+channel-group 2 mode active
+int po2
+ip addr 10.208.0.38 255.255.255.254
+end
+wr
+
+```
+
+
+
+Distr-Floor-5:
+
+```
+en
+conf t
+hostname Distr-Floor-5
+ip routing
+int e0/0
+no switchport
+ip addr 10.208.0.6 255.255.255.254
+
+int e0/1
+no switchport
+ip addr 10.208.0.8 255.255.255.254
+
+int e0/2
+no switchport
+ip addr 10.208.0.10 255.255.255.254
+
+int e1/0
+no switchport
+ip addr 10.208.0.12 255.255.255.254
+
+int e1/1
+no switchport
+ip addr 10.208.0.4 255.255.255.254
+
+int e0/3
+no switchport
+ip addr 10.208.0.1 255.255.255.254
+
+
+
+
+end
+wr
+```
+
+
+
+
+
+Distr-Floor-6:
+
+```
+en
+conf t
+hostname Distr-Floor-6
+ip routing
+
+int e0/2
+no switchport
+ip addr 10.208.0.11 255.255.255.254
+
+int e0/1
+no switchport
+ip addr 10.208.0.21 255.255.255.254
+
+int e0/0
+no switchport
+ip addr 10.208.0.24 255.255.255.254
+
+int e0/3
+no switchport
+ip addr 10.208.0.26 255.255.255.254
+
+int e1/1
+no switchport
+ip addr 10.208.0.28 255.255.255.254
+
+int e1/0
+no switchport
+ip addr 10.208.0.23 255.255.255.254
+
+int e1/3
+no switchport
+ip addr 10.208.0.15 255.255.255.254
+
+int e1/2
+no switchport
+ip addr 10.208.0.3 255.255.255.254
+
+
+
+int range e2/0-1
+no switchport
+channel-group 1 mode active
+int po1
+ip addr 10.208.0.30 255.255.255.254
+end
+wr
+```
+
+
+
+
+
+
+
+Distr-Floor-7:
+
+```
+en
+conf t
+hostname Distr-Floor-7
+ip routing
+
+
+int e0/1
+no switchport
+ip addr 10.208.0.37 255.255.255.254
+
+int e0/0
+no switchport
+ip addr 10.208.0.19 255.255.255.254
+
+int e0/3
+no switchport
+ip addr 10.208.0.27 255.255.255.254
+
+int e1/1
+no switchport
+ip addr 10.208.0.33 255.255.255.254
+
+int e1/0
+no switchport
+ip addr 10.208.0.13 255.255.255.254
+
+int e1/2
+no switchport
+ip addr 10.208.0.35 255.255.255.254
+
+
+
+int range e0/2, e1/3
+no switchport
+channel-group 2 mode active
+int po2
+ip addr 10.208.0.39 255.255.255.254
+end
+wr
+```
+
+
+
+
+
+Core-1:
+
+```
+en
+conf t
+hostname Core-1
+
+int e0/2
+ip addr 10.208.0.7 255.255.255.254
+no shut
+
+int e0/3
+ip addr 10.208.0.20 255.255.255.254
+no shut
+
+int e1/0
+ip addr 10.208.0.18 255.255.255.254
+no shut
+
+int e0/0
+ip addr 10.208.0.16 255.255.255.254
+no shut
+
+
+end 
+wr
+
+
+
+
+```
+
+
+
+
+
+
+
+Core-2:
+
+```
+en
+conf t
+hostname Core-2
+
+int e0/2
+ip addr 10.208.0.25 255.255.255.254
+no shut
+
+int e0/3
+ip addr 10.208.0.9 255.255.255.254
+no shut
+
+int e1/0
+ip addr 10.208.0.36 255.255.255.254
+no shut
+
+int e0/0
+ip addr 10.208.0.17 255.255.255.254
+no shut
+
+
+end 
+wr
+```
+
+
+
+
+
+### Включаем на сетевых устройствах OSPF.
+
+На новых устройствах возможно держать 100-150 единиц в зоне.  По исходной конфигурации (50 коммутаторов доступа) до этого порога запас есть. Но с учетом масштабирования выполним деление на зоны. Это снизит количество служебного трафика??? Какого??? На выходе из зоны суммаризацию мы делать не будем (во-первых, для этого нужно правильно выбрать первоначальное разбиение; во-вторых - одна зона подключена к нескльким коммутаторам распределения, поэтому адреса не суммаризировать, как мне кажется).
+
+![](screenshots/2021-06-10-22-45-47-image.png)
+
+
+
+### Настраиваем зону 0.
+
+Core-1:
+
+```
+en
+conf t
+router ospf 1
+router-id 16.16.16.16
+passive-interface default
+no passive-interface e0/0
+no passive-interface e0/2
+no passive-interface e0/3
+no passive-interface e1/0
+
+int range e0/0,e0/2,e0/3,e1/0
+ip ospf 1 area 0
+
+end
+wr
+```
+
+Core-2:
+
+```
+en
+conf t
+router ospf 1
+router-id 17.17.17.17
+passive-interface default
+no passive-interface e0/0
+no passive-interface e0/2
+no passive-interface e0/3
+no passive-interface e1/0
+
+int range e0/0,e0/2,e0/3,e1/0
+ip ospf 1 area 0
+
+end
+wr
+```
+
+
+
+Первые динамические маршруты:
+
+![](screenshots/2021-06-10-22-53-18-image.png)
+
+
+
+
+
+Distr-Floor-5:
+
+```
+en
+conf t
+router ospf 1
+router-id 6.6.6.6
+passive-interface default
+no passive-interface e0/0
+no passive-interface e0/1
+no passive-interface e0/2
+no passive-interface e0/3
+no passive-interface e1/0
+no passive-interface e1/1
+
+int range e0/0,e0/1,e0/2,e1/0
+ip ospf 1 area 0
+
+int range e0/3,e1/1
+ip ospf 1 area 0
+
+
+end
+wr
+```
+
+
+
+Первые маршруты из другой зоны:
+
+![](screenshots/2021-06-10-22-59-16-image.png)
+
+
+
+Distr-Floor-6:
+
+```
+en
+conf t
+router ospf 1
+router-id 24.24.24.24
+passive-interface default
+no passive-interface e0/0
+no passive-interface e0/1
+no passive-interface e0/2
+no passive-interface e0/3
+no passive-interface e1/0
+no passive-interface e1/1
+no passive-interface e1/2
+no passive-interface e1/3
+no passive-interface po1
+
+
+int range e0/0-3
+ip ospf 1 area 0
+
+int range e1/3,e1/2
+ip ospf 1 area 0
+
+int range e1/0,e1/1
+ip ospf 1 area 0
+
+int po1
+ip ospf 1 area 0
+
+
+
+end
+wr
+```
+
+
+
+
+
+
+
+Distr-Floor-7:
+
+```
+en
+conf t
+router ospf 1
+router-id 27.27.27.27
+passive-interface default
+no passive-interface e0/0
+no passive-interface e0/1
+no passive-interface e0/3
+no passive-interface e1/0
+no passive-interface e1/1
+no passive-interface e1/2
+no passive-interface po2
+
+
+int range e0/0, e0/1, e0/3, e1/0
+ip ospf 1 area 0
+
+
+int range e1/2,e1/1
+ip ospf 1 area 0
+
+int po2
+ip ospf 1 area 0
+
+
+
+end
+wr
+```
+
+
+
+Проверим, приходят ли все маршруты на Core:
+
+![](screenshots/2021-06-10-23-09-43-image.png)
+
+![](screenshots/2021-06-10-23-10-33-image.png)
+
+Маршруты появлялись с задержкой в десяток секунд. Часть так и не появилась. Причина - дубль router-id на одном из маршрутизаторов. После исправления и сброса процесса ospf маршруты пришли все:
+
+![](screenshots/2021-06-10-23-16-41-image.png)
+
+### Настройка на коммутаторах доступа SVI и OSPF.
+
+На каждом коммутаторе настроим SVI. Номером SVI будем указывать отдел, который будет подключаться в соответствующий VLAN. Вспоминаем нумерацию отделов:
+
+HR - Отдел 23
+Acc - Отдел 36
+Wi-Fi - Отдел 65
+Srv-Print - Отдел 100
+Srv-Voice - Отдел 101
+
+
+
+Access-Floor-5-21:
+
+```
+en
+conf t
+
+vlan 23
+name HR
+exit
+vlan 36
+name Acc
+exit
+
+int vlan 23
+ip addr 10.194.133.129 255.255.255.192
+description HR
+no shut
+
+int vlan 36
+description Acc
+ip addr 10.194.136.193 255.255.255.192
+no shut
+
+int e1/1
+switchport mode access
+switchport access vlan 36
+
+
+
+int range e0/1-2
+switchport mode access
+switchport access vlan 23
+
+
+router ospf 1
+router-id 2.2.2.2
+passive-interface default
+no passive-interface e0/0
+no passive-interface e1/0
+
+int range vlan 23, vlan 36
+ip ospf 1 area 5
+
+int range e0/0,e1/0
+ip ospf 1 area 0
+
+end
+
+wr
+```
+
+
+
+Появились первые маршруты до конечных устройств:
+
+![](screenshots/2021-06-10-23-54-36-image.png)
+
+
+
+Недоработка - суммировать маршруты можно только на ABR. Поэтому придется немного изменить схему - расширить зону 0, превратив в ABR маршрутизаторы доступа:
+
+![](screenshots/2021-06-11-00-17-30-image.png)
+
+
+
+Не забудем сделать суммаризацию на коммутаторе.
+
+Access-Floor-5-21:
+
+```
+en
+conf t
+
+router ospf 1
+area 5 range  10.194.128.0 255.255.224.0
+end
+wr
+
+```
+
+Получили суммарный маршрут с маской 19:
+
+![](screenshots/2021-06-11-00-19-30-image.png)
+
+
+
+Продолжаем настраивать коммутаторы доступа.
+
+
+
+Access-Floor-5-21:
+
+```
+en
+conf t
+
+vlan 23
+name HR
+exit
+vlan 36
+name Acc
+exit
+
+vlan 65
+name Wi-fi
+exit
+
+vlan 100
+name Srv-print
+exit
+
+vlan 101
+name Srv-voice
+exit
+
+
+int vlan 23
+ip addr 10.194.165.129 255.255.255.192
+description HR
+no shut
+
+int vlan 65
+description Wi-Fi
+ip addr 10.194.176.1 255.255.255.192
+no shut
+
+int e1/1
+switchport mode access
+switchport access vlan 23
+no shut
+
+
+int e1/0
+switchport mode access
+switchport access vlan 65
+no shut
+
+
+router ospf 1
+router-id 3.3.3.3
+passive-interface default
+no passive-interface e0/0
+no passive-interface e0/2
+area 5 range  10.194.160.0 255.255.224.0
+
+int range vlan 23, vlan 36, vlan 65, vlan 100, vlan 101
+ip ospf 1 area 5
+
+int range e0/0,e0/2
+ip ospf 1 area 0
+
+end
+wr
+```
+
+
+
+
+
+
+
+Access-Floor-6-27:
+
+```
+en
+conf t
+
+vlan 23
+name HR
+exit
+
+vlan 36
+name Acc
+exit
+
+vlan 65
+name Wi-fi
+exit
+
+vlan 100
+name Srv-print
+exit
+
+vlan 101
+name Srv-voice
+exit
+
+
+int vlan 23
+ip addr 10.195.69.129 255.255.255.192
+description HR
+no shut
+
+int vlan 36
+description Acc
+ip addr 10.195.72.193 255.255.255.192
+no shut
+
+int e0/1
+switchport mode access
+switchport access vlan 23
+no shut
+
+
+int e1/0
+switchport mode access
+switchport access vlan 36
+no shut
+
+
+router ospf 1
+router-id 32.32.32.32
+passive-interface default
+no passive-interface e0/0
+no passive-interface e0/3
+area 6 range  10.195.64.0 255.255.224.0
+
+int range vlan 23, vlan 36, vlan 65, vlan 100, vlan 101
+ip ospf 1 area 6
+
+int range e0/0,e0/3
+ip ospf 1 area 0
+
+end
+wr
+```
+
+
+
+
+
+Access-Floor-6-28:
+
+```
+en
+conf t
+
+vlan 23
+name HR
+exit
+
+vlan 36
+name Acc
+exit
+
+vlan 65
+name Wi-fi
+exit
+
+vlan 100
+name Srv-print
+exit
+
+vlan 101
+name Srv-voice
+exit
+
+
+int vlan 65
+description Wi-Fi
+ip addr 10.195.112.1 255.255.255.192
+no shut
+
+int e0/1
+switchport mode access
+switchport access vlan 65
+no shut
+
+
+router ospf 1
+router-id 29.29.29.29
+passive-interface default
+no passive-interface e0/0
+no passive-interface e0/3
+area 6 range  10.195.96.0 255.255.224.0
+
+int range vlan 23, vlan 36, vlan 65, vlan 100, vlan 101
+ip ospf 1 area 6
+
+int range e0/0,e0/3
+ip ospf 1 area 0
+
+end
+wr
+```
+
+
+
+
+
+Access-Floor-7-35:
+
+```
+en
+conf t
+
+vlan 23
+name HR
+exit
+
+vlan 36
+name Acc
+exit
+
+vlan 65
+name Wi-fi
+exit
+
+vlan 100
+name Srv-print
+exit
+
+vlan 101
+name Srv-voice
+exit
+
+
+int vlan 100
+description Srv-print
+ip addr 10.196.88.193 255.255.255.192
+no shut
+
+
+int vlan 101
+description Srv-voice
+ip addr 10.196.89.1 255.255.255.192
+no shut
+
+
+int e0/1
+switchport mode access
+switchport access vlan 100
+no shut
+
+
+int e0/2
+switchport mode access
+switchport access vlan 101
+no shut
+
+
+
+router ospf 1
+router-id 31.31.31.31
+passive-interface default
+no passive-interface po1
+no passive-interface po2
+area 7 range  10.196.64.0 255.255.224.0
+
+int range vlan 23, vlan 36, vlan 65, vlan 100, vlan 101
+ip ospf 1 area 7
+
+int range po1,po2
+ip ospf 1 area 0
+
+end
+wr
+```
+
+
+
+
+
+При прохождении ping от Access-Floor-7-35 через LAG коммутаторы распределения отключаются:
+
+![](screenshots/2021-06-11-01-01-37-image.png)
+
+Придется от LAG отказаться:
+
+![](screenshots/2021-06-11-01-18-42-image.png)
+
+Distr-Floor-6
+
+```
+en
+conf t
+no interface Port-channel1
+
+
+interface Ethernet2/0
+ switchport
+ no shutdown
+
+interface Ethernet2/1
+no switchport
+ip address 10.208.0.30 255.255.255.254
+ip ospf 1 area 0
+no shut
+
+router ospf 1
+no passive-interface Ethernet2/1
+
+end
+
+wr
+
+
+
+```
+
+Distr-Floor-7
+
+```
+en
+conf t
+no interface Port-channel2
+
+
+interface Ethernet1/3
+ switchport
+ no shutdown
+
+interface Ethernet0/2
+no switchport
+ip address 10.208.0.39 255.255.255.254
+ip ospf 1 area 0
+no shut
+
+router ospf 1
+no passive-interface Ethernet0/2
+
+end
+
+wr
+```
+
+
+
+
+
+Access-Floor-7-35
+
+```
+en
+conf t
+no interface Port-channel1
+no interface Port-channel2
+
+
+interface Ethernet1/1
+no switchport
+ip address 10.208.0.31 255.255.255.254
+ip ospf 1 area 0
+no shut
+
+interface e0/0
+no switchport
+ip address 10.208.0.38 255.255.255.254
+ip ospf 1 area 0
+no shut
+
+interface Ethernet1/0
+ switchport
+ no shutdown
+
+interface Ethernet0/3
+ switchport
+ no shutdown
+
+
+router ospf 1
+no passive-interface Ethernet1/1
+no passive-interface Ethernet0/0
+
+end
+
+wr
+```
+
+Схема скорректирована, связь проходит:
+
+![](screenshots/2021-06-11-01-19-49-image.png)
+
+
+
+
+
+Итог настройки OSPF:
+
+![](screenshots/2021-06-11-01-20-56-image.png)
+
+Все маршруты приходят, от коммутаторов доступа приходят суммарные маршруты.
