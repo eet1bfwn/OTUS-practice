@@ -1849,7 +1849,7 @@ wr
 
 ### <a name="realization_prov_addr_plan"></a>Планирование адресного пространства
 
-    ![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\Проект\screenshots\2021-06-14-12-22-07-image.png)
+![](screenshots/2021-06-14-12-22-07-image.png)
 
 - Для организации линков между маршрутизаторами одного провайдера используются сети, начиная с 10.0.0.0/31.
 - Для Loopback-интерфейсов - сети, начиная с 10.0.2.0/31.
