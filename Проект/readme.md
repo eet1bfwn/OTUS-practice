@@ -2243,7 +2243,38 @@ network 201.0.0.6 mask 255.255.255.254
 
 end
 wr
+
 ```
+
+
+
+
+**ISP2**
+
+R29:
+
+```
+en
+conf t
+
+router bgp 2001
+bgp router-id 29.29.29.29
+
+
+neighbor 202.0.0.2 remote-as 8001
+neighbor 201.0.0.7 remote-as 1001
+neighbor 203.0.0.7 remote-as 3001
+
+network 202.0.0.0 mask 255.255.255.254
+network 203.0.0.6 mask 255.255.255.254
+network 201.0.0.6 mask 255.255.255.254
+network 202.0.0.2 mask 255.255.255.254
+
+end
+wr
+```
+
+
 
 **ISP3**
 
@@ -2305,30 +2336,6 @@ end
 wr
 ```
 
-**ISP2**
-
-R29:
-
-```
-en
-conf t
-
-router bgp 2001
-bgp router-id 29.29.29.29
-
-
-neighbor 202.0.0.2 remote-as 8001
-neighbor 201.0.0.7 remote-as 1001
-neighbor 203.0.0.7 remote-as 3001
-
-network 202.0.0.0 mask 255.255.255.254
-network 203.0.0.6 mask 255.255.255.254
-network 201.0.0.6 mask 255.255.255.254
-network 202.0.0.2 mask 255.255.255.254
-
-end
-wr
-```
 
 Проверяем маршруты:
 
