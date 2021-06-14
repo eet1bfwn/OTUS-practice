@@ -30,13 +30,13 @@
       3. [Настройка коммутаторов доступа.](#realization_acess_config)
       4. [Настройка динамической маршрутизации.](#realization_dynamic_config)
       5. [Настройка DHCP.](#realiztoin_dhcp_hq)
-   2. [Настройка провайдерской сети.](#)
-      1. [Планирование адресного пространства.](#)
-      2. [Базовая настройка маршрутизаторов.](#)
-      3. [Настройка IGP.](#)
-      4. [Настройка BGP.](#)
-   3. [Базовая настройка сети в дата-центре.](#)
-      1. [Планирование адресного пространства.](#)
+   2. [Настройка провайдерской сети.](#realization_providers)
+      1. [Планирование адресного пространства.](#realization_prov_addr_plan)
+      2. [Базовая настройка маршрутизаторов.](#realizatioin_isp_base_config)
+      3. [Настройка IGP.](#realization_isp_igp)
+      4. [Настройка BGP.](#realization_isp_bgp)
+   3. [Базовая настройка сети в дата-центре.](#realization_dc_base)
+      1. [Планирование адресного пространства.](#realization_dc_addr_plan)
       2. [Базовая настройка устройств.](#)
    4. [Настройка BGP в центральном офисе и дата-центре.](#)
 
@@ -373,8 +373,6 @@
 В офисе 10 этажей, на каждом этаже по 5 коммутаторов доступа и одному коммутатору распределения. Их все размещать на схеме не будем. Отобразим лишь этажи 5, 6, 7 с 1-2 коммутаторами.
 
 ![](screenshots/2021-06-13-15-29-18-image.png)
-
-
 
 На 5м этаже расположены коммутаторы 2 и 4.
 
@@ -1609,8 +1607,6 @@ DHCP-серверы расположены на коммутаторах Distr-F
 | 10.204.24.192  | 255.255.255.192 | 10.204.24.193  | 10.204.24.193;10.204.24.219 10.204.24.255    | 10.204.24.193 10.204.24.218;10.204.24.244 10.204.24.255     |
 | 10.204.25.0    | 255.255.255.192 | 10.204.25.1    | 10.204.25.1;10.204.25.27 10.204.25.63        | 10.204.25.1 10.204.25.26;10.204.25.52 10.204.25.63          |
 
-
-
 Distr-Floor-5:
 
 ```
@@ -1745,8 +1741,6 @@ end
 wr
 ```
 
-
-
 На коммутаторах доступа укажем адреса серверов DHCP. Адреса указываем с Loopback-интерфейсов.
 
 Access-Floor-5-2:
@@ -1839,13 +1833,9 @@ wr
 
 Проверяем:
 
-
-
 ![](screenshots/2021-06-14-02-06-19-image.png)
 
-Клиенты получают адреса от Distr-Floor-5, т.к. он указан первым на коммутаторе доступа???
-
-
+В работе адреса для Srv-Print и Srv-Voice выдаются по DHCP. В реальности так делать не стоит. Но для демонстрации, что в каждой подключенной подсети настроена работа DHCP, вполне подходит.
 
 Отключим Distr-Floor-5 и запросим адреса заново:
 
@@ -1854,3 +1844,512 @@ wr
 Видим, что шлюзы остались прежними, адреса сместились в область, которая выдается вторым DHCP-сервером.
 
 Но для Accounting-1 сервер отозвался не сразу. Возможно, из-за виртуализации?
+
+## <a name="realization_providers"></a>Настройка провайдерской сети
+
+### <a name="realization_prov_addr_plan"></a>Планирование адресного пространства
+
+    ![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\Проект\screenshots\2021-06-14-12-22-07-image.png)
+
+- Для организации линков между маршрутизаторами одного провайдера используются сети, начиная с 10.0.0.0/31.
+- Для Loopback-интерфейсов - сети, начиная с 10.0.2.0/31.
+- Адреса интерфесов, которыми соединены разные автономные зоны и офисы, берутся из пула провайдера, имеют маску 31 бит.
+  - Пул ISP1 201.0.0.0/8
+  - Пул ISP2 202.0.0.0/8
+  - Пул ISP3 203.0.0.0/8  
+- Первый адрес из подсети /31 назначается вернему маршрутизатору, второй -нижнему.
+
+### <a name="realizatioin_isp_base_config"></a>Базовая настройка маршрутизаторов
+
+Начнем с ISP1.
+
+R5:
+
+```
+en
+conf t
+hostname R5
+no ip domain-lookup
+int loopback 0
+ip addr 10.0.2.5 255.255.255.255
+
+
+int e0/0
+ip addr 10.0.0.5 255.255.255.254
+no shut
+
+int e0/1
+ip addr 201.0.0.2 255.255.255.254
+no shut
+
+int e0/2
+ip addr 201.0.0.4 255.255.255.254
+no shut
+
+int e0/3
+ip addr 10.0.0.3 255.255.255.254
+no shut
+
+end
+wr
+```
+
+R6:
+
+```
+en
+conf t
+hostname R6
+no ip domain-lookup
+int loopback 0
+ip addr 10.0.2.6 255.255.255.255
+
+
+int e0/0
+ip addr 10.0.0.4 255.255.255.254
+no shut
+
+int e0/1
+ip addr 201.0.0.0 255.255.255.254
+no shut
+
+int e0/2
+ip addr 10.0.0.0 255.255.255.254
+no shut
+
+
+end
+wr
+```
+
+R8:
+
+```
+en
+conf t
+hostname R8
+no ip domain-lookup
+int loopback 0
+ip addr 10.0.2.8 255.255.255.255
+
+
+int e0/0
+ip addr 10.0.0.2 255.255.255.254
+no shut
+
+
+int e0/1
+ip addr 10.0.0.1 255.255.255.254
+no shut
+
+int e0/2
+ip addr 201.0.0.9 255.255.255.254
+no shut
+
+int e0/3
+ip addr 201.0.0.7 255.255.255.254
+no shut
+
+end
+wr
+```
+
+ISP2
+
+R29:
+
+```
+en
+conf t
+hostname R29
+no ip domain-lookup
+int loopback 0
+ip addr 10.0.2.29 255.255.255.255
+
+
+int e0/0
+ip addr 201.0.0.6 255.255.255.254
+no shut
+
+int e0/1
+ip addr 203.0.0.6 255.255.255.254
+no shut
+
+int e0/2
+ip addr 202.0.0.3 255.255.255.254
+no shut
+
+int e0/3
+ip addr 202.0.0.0 255.255.255.254
+no shut
+
+
+end
+wr
+```
+
+ISP3
+R17:
+
+```
+en
+conf t
+hostname R17
+no ip domain-lookup
+int loopback 0
+ip addr 10.0.2.17 255.255.255.255
+
+
+int e0/0
+ip addr 201.0.0.5 255.255.255.254
+no shut
+
+int e0/1
+ip addr 203.0.0.2 255.255.255.254
+no shut
+
+int e0/2
+ip addr 203.0.0.1 255.255.255.254
+no shut
+
+int e0/3
+ip addr 10.0.0.0 255.255.255.254
+no shut
+
+
+end
+wr
+```
+
+R20:
+
+```
+en
+conf t
+hostname R20
+no ip domain-lookup
+int loopback 0
+ip addr 10.0.2.20 255.255.255.255
+
+
+int e0/0
+ip addr 203.0.0.4 255.255.255.254
+no shut
+
+
+int e0/1
+ip addr 10.0.0.1 255.255.255.254
+no shut
+
+int e0/3
+ip addr 203.0.0.7 255.255.255.254
+no shut
+
+
+
+end
+wr
+```
+
+### <a name="realization_isp_igp"></a>Настройка IGP
+
+В качестве протокола внутренней динамической маршрутизации выберем протокол IS-IS. Каждый маршрутизатор находится в своей зоне, взаимодействие только L2.
+
+ISP1.
+
+R5:
+
+```
+en
+conf t
+router isis
+net 49.5555.0005.0005.0005.00
+is-type level-2-only
+exit
+int range e0/0,e0/3, loopback 0
+ip router isis
+end
+wr
+```
+
+R6:
+
+```
+en
+conf t
+router isis
+net 49.6666.0006.0006.0006.00
+is-type level-2-only
+exit
+int range e0/0,e0/2, loopback 0
+ip router isis
+end
+wr
+```
+
+R8:
+
+```
+en
+conf t
+router isis
+net 49.8888.0008.0008.0008.00
+is-type level-2-only
+exit
+int range e0/0,e0/1, loopback 0
+ip router isis
+end
+wr
+```
+
+Пример результата:
+
+![](screenshots/2021-06-14-13-05-28-image.png)
+
+Получены маршруты до внутренних сетей и лупбэков.
+
+ISP3
+
+R17:
+
+```
+en
+conf t
+router isis
+net 49.1717.1717.1717.1717.00
+is-type level-2-only
+exit
+int range e0/3, loopback 0
+ip router isis
+end
+wr
+```
+
+R20:
+
+```
+en
+conf t
+router isis
+net 49.2020.2020.2020.2020.00
+is-type level-2-only
+exit
+int range e0/1, loopback 0
+ip router isis
+end
+wr
+```
+
+Результат:
+
+![](screenshots/2021-06-14-13-09-32-image.png)
+
+Получен маршрут до loopback соседа.
+
+### <a name="realization_isp_bgp"></a>Настройка BGP
+
+ISP1
+
+R5:
+
+```
+en
+conf t
+
+router bgp 1001
+bgp router-id 5.5.5.5
+
+
+
+neighbor PG_iBGP peer-group
+neighbor PG_iBGP remote-as 1001
+neighbor PG_iBGP next-hop-self
+neighbor PG_iBGP update-source loopback 0
+
+
+neighbor 10.0.2.6 peer-group PG_iBGP
+neighbor 10.0.2.8 peer-group PG_iBGP
+
+
+neighbor 201.0.0.5 remote-as 3001
+neighbor 201.0.0.3 remote-as 9001
+
+
+network 201.0.0.4 mask 255.255.255.254
+network 201.0.0.2 mask 255.255.255.254
+
+end
+wr
+```
+
+R6:
+
+```
+en
+conf t
+
+router bgp 1001
+bgp router-id 6.6.6.6
+
+
+neighbor PG_iBGP peer-group
+neighbor PG_iBGP remote-as 1001
+neighbor PG_iBGP next-hop-self
+neighbor PG_iBGP update-source loopback 0
+
+
+neighbor 10.0.2.5 peer-group PG_iBGP
+neighbor 10.0.2.8 peer-group PG_iBGP
+
+
+neighbor 201.0.0.1 remote-as 9001
+
+
+
+network 201.0.0.0 mask 255.255.255.254
+
+end
+wr
+```
+
+R8:
+
+```
+en
+conf t
+
+router bgp 1001
+bgp router-id 8.8.8.8
+
+
+neighbor PG_iBGP peer-group
+neighbor PG_iBGP remote-as 1001
+neighbor PG_iBGP next-hop-self
+neighbor PG_iBGP update-source loopback 0
+
+
+neighbor 10.0.2.5 peer-group PG_iBGP
+neighbor 10.0.2.6 peer-group PG_iBGP
+
+
+neighbor 201.0.0.8 remote-as 8001
+neighbor 201.0.0.6 remote-as 2001
+
+
+
+network 201.0.0.8 mask 255.255.255.254
+network 201.0.0.6 mask 255.255.255.254
+
+end
+wr
+```
+
+ISP3
+
+R17:
+
+```
+en
+conf t
+
+router bgp 3001
+bgp router-id 17.17.17.17
+
+
+neighbor PG_iBGP peer-group
+neighbor PG_iBGP remote-as 3001
+neighbor PG_iBGP next-hop-self
+neighbor PG_iBGP update-source loopback 0
+
+
+neighbor 10.0.2.20 peer-group PG_iBGP
+
+neighbor 201.0.0.4 remote-as 1001
+neighbor 203.0.0.0 remote-as 9001
+
+
+
+network 201.0.0.4 mask 255.255.255.254
+network 203.0.0.0 mask 255.255.255.254
+network 203.0.0.2 mask 255.255.255.254
+
+end
+wr
+```
+
+R20:
+
+```
+en
+conf t
+
+router bgp 3001
+bgp router-id 20.20.20.20
+
+
+neighbor PG_iBGP peer-group
+neighbor PG_iBGP remote-as 3001
+neighbor PG_iBGP next-hop-self
+neighbor PG_iBGP update-source loopback 0
+
+
+neighbor 10.0.2.17 peer-group PG_iBGP
+
+neighbor 203.0.0.6 remote-as 2001
+
+network 203.0.0.4 mask 255.255.255.254
+network 203.0.0.6 mask 255.255.255.254
+
+end
+wr
+```
+
+ISP2
+
+R29:
+
+```
+en
+conf t
+
+router bgp 2001
+bgp router-id 29.29.29.29
+
+
+neighbor 202.0.0.2 remote-as 8001
+neighbor 201.0.0.7 remote-as 1001
+neighbor 203.0.0.7 remote-as 3001
+
+network 202.0.0.0 mask 255.255.255.254
+network 203.0.0.6 mask 255.255.255.254
+network 201.0.0.6 mask 255.255.255.254
+network 202.0.0.2 mask 255.255.255.254
+
+end
+wr
+```
+
+
+
+
+
+Проверяем маршруты:
+
+![](screenshots/2021-06-14-13-49-53-image.png)
+
+Маршруты приходят.
+
+
+
+## <a name="realization_dc_base"></a>Базовая настройка сети в дата-центре
+### <a name="realization_dc_addr_plan"></a>Планирование адресного пространства
+
+- В дата-центре расположены серверы, к которым необходим доступ из сети Интернет.
+- Адреса принадлежат автономной системе.
+- Серверы Srv-Web-1 и Srv-Mail-1 расположены в разных подсетях.
+
+К серверам возможно реализовать два варианта доступа:
+- Назначить каждому серверу белый IP и выполнять маршрутизацию. Но тогда в каждой подсети нужно занять один белый адрес для роли шлюза.
+- Назначить каждому серверу серый IP, и при входе в автономную систему пакета до сервера менять адрес назначения с белого на серый. Но в этом случае при обращении к серверу изнутри серой сети пакет пойдет сперва на пограничный маршрутизатор, там произойдет трансляция адреса назначения, пакет направится к серверу.
+  - Во-первых - получим скорее всего более длинный путь.
+  - Во-вторых - сервер ответит пакетом с адресом назначения в серой сети и пошлет пакет, минуя маршрутизатор, на котором была трансляция. Такой пакет может быть отброшен правилом на клиенте.
