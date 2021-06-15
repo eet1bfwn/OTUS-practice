@@ -413,3 +413,86 @@ wr
 ## Настроите DHCP сервер в офисе Москва на маршрутизаторах R12 и R13. VPC1 и VPC7 должны получать сетевые настройки по DHCP
 
 Подробная настройка сделана в [Лабораторной работе №6](../lab06/readme.md#head110)
+
+
+
+```
+
+ip dhcp excluded-address 10.177.10.1 10.177.10.100
+ip dhcp excluded-address 10.177.70.1 10.177.70.100
+
+ip dhcp pool POOL-VLAN-10
+network 10.177.10.0 255.255.255.0
+default-router 10.177.10.1 
+
+ip dhcp pool POOL-VLAN-70
+network 10.177.70.0 255.255.255.0
+default-router 10.177.70.1 
+
+
+```
+
+Пример результата - проверка связи до офиса Чокурдах:
+
+![](screenshots/2021-06-15-22-10-50-image.png)
+
+
+
+
+
+## Настроите NTP сервер на R12 и R13. Все устройства в офисе Москва должны синхронизировать время с R12 и R13
+
+
+
+Настроим серверы NTP R12-13:
+
+```
+en
+conf t
+ntp master 5
+ntp update-calendar
+end
+wr
+```
+
+
+
+??? поподробнее про update-calendar
+
+
+
+Настроим клиенты.
+
+SW5:
+
+```
+en
+clock set 
+clock set 0:0:0 JAN 1 2000
+clock update-calendar
+
+```
+
+![](screenshots/2021-06-15-22-41-33-image.png)
+
+Сейчас на клиенте установлено неправильное время, нет связи с серверами NTP.
+
+
+
+SW5:
+
+```
+en
+conf t
+ntp server 10.177.40.1
+ntp server 10.177.40.2
+ntp server 10.177.40.3
+ntp server 2001:db8:177:40::1
+ntp server 2001:db8:177:40::2
+ntp server 2001:db8:177:40::3
+
+```
+
+![](screenshots/2021-06-15-22-45-16-image.png)
+
+Стратумы получены, но часы не обновились. Нужна еще настройка?
