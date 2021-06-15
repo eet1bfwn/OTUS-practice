@@ -162,8 +162,8 @@ wr
 en
 conf t
 
-no ip nat pool POOL_NAT_OUT 20.177.0.15 20.177.0.14 netmask 255.255.255.252
-ip nat pool POOL_NAT_OUT 20.177.0.15 20.177.0.14 netmask 255.255.255.0
+no ip nat pool POOL_NAT_OUT 20.177.0.14 20.177.0.14 netmask 255.255.255.252
+ip nat pool POOL_NAT_OUT 20.177.0.14 20.177.0.14 netmask 255.255.255.0
 
 
 end
