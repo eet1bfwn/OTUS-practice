@@ -359,7 +359,7 @@ service password-encryption
 username admin privilege 15 secret class
 line vty 0 4
 transport input ssh
-
+login local
 end
 wr
 ```
