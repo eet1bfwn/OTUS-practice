@@ -162,7 +162,7 @@
 - Запланируем резервирование DHCP. Резервирование реализуется с помощью второго DHCP-сервера и непересекающимися диапазонами адресов. Поэтому сеть одного отдела будет состоять из 512 адресов. Адреса из первой половины будет выдавать первый сервер, второй половины - второй.
 
 - Диаграмма для визулизации (описание ниже):
-  
+
 ![](screenshots/2021-06-27-20-00-07-image.png)
 
 - К стеку распределения подклчается 20 стеков доступа. Для идентификации подсети за стеком необходимо 5 бит.
@@ -349,7 +349,7 @@
 - Поскольку VPN строится на DMVPN, то будем использовать EIGRP.
 
 - Схема анонсов маршрутов следующая:
-  
+
 ![](screenshots/2021-06-28-21-02-10-image.png)
 
 Пояснение, почему Distribution-Stack не суммаризирует маршруты (на диаграмме полупрозначным цветом все же указана потенциальная суммаризация). 
@@ -448,6 +448,8 @@ Access-Stack-Floor-07: 00110
 
 - включим маршрутизацию,
 
+- отключим cef, иначе связь до конечных устройств не будет работать,
+
 - назначим адреса интерфейсам.
 
 Агрегацию линков делать на стенде не будем - для L3 интерфейсов наблюдаются баги - отключение коммутатора при получении пакета.
@@ -458,6 +460,7 @@ Access-Stack-Floor-05:
 en
 conf t
 no ip domain-lookup
+no ip cef
 hostname Access-Stack-Floor-05
 ip routing
 
@@ -478,6 +481,7 @@ Access-Stack-Floor-06:
 en
 conf t
 no ip domain-lookup
+no ip cef
 hostname Access-Stack-Floor-06
 ip routing
 
@@ -498,6 +502,7 @@ Access-Stack-Floor-07:
 en
 conf t
 no ip domain-lookup
+no ip cef
 hostname Access-Stack-Floor-07
 ip routing
 
@@ -939,6 +944,14 @@ af-interface ethernet 1/0
 no passive-interface
 exit-af-interface
 
+af-interface ethernet 1/1
+no passive-interface
+exit-af-interface
+
+af-interface ethernet 1/2
+no passive-interface
+exit-af-interface
+
 network 10.223.244.2 0.0.0.0
 network 10.223.248.2 0.0.0.1
 network 10.223.248.4 0.0.0.1
@@ -1045,253 +1058,264 @@ wr
 DHCP-серверы расположены на отдельных маршрутизаторах для наглядной настройки на стенде и проверки правильной работы протокола. DHCP-серверы можно расположить на отдельных серверах (Windows/Linux), либо на стеке распределения (возможно, идея не самая лучшая). Каждый сервер настроен на выдачу 253 адресов из пула. Настройки на них одинаковые, за исключением диапазонов выдаваемых адресов.
 Отобразим необходимые пулы и исключаемые адреса:
 
-| Сеть         | Маска           | Шлюз           | Исключаемые адреса Distr-Floor-5             | Исключаемые адреса Distr-Floor-6                            |
-| ------------ | --------------- | -------------- | -------------------------------------------- | ----------------------------------------------------------- |
-| 10.196.44.0  | 255.255.254.0   | 10.200.37.129  | 10.200.37.129;10.200.37.155 10.200.37.191    | 10.200.37.129 10.200.37.154;10.200.37.180 10.200.37.191     |
-| 10.196.70.0  | 255.255.254.0   | 10.200.40.193  | 10.200.40.193;10.200.40.219 10.200.40.255    | 10.200.40.193 10.200.40.218;10.200.40.244 10.200.40.255     |
-| 10.197.44.0  | 255.255.254.0   | 10.200.101.129 | 10.200.101.129;10.200.101.155 10.200.101.191 | 10.200.101.129 10.200.101.154;10.200.101.180 10.200.101.191 |
-| 10.197.70.0  | 255.255.254.0   | 10.200.112.1   | 10.200.112.1;10.200.112.27 10.200.112.63     | 10.200.112.1 10.200.112.26;10.200.112.52 10.200.112.63      |
-| 10.197.128.0 | 255.255.254.0   | 10.202.5.129   | 10.202.5.129;10.202.5.155 10.202.5.191       | 10.202.5.129 10.202.5.154;10.202.5.180 10.202.5.191         |
-| 10.198.128.0 | 255.255.254.0   | 10.202.8.193   | 10.202.8.193;10.202.8.219 10.202.8.255       | 10.202.8.193 10.202.8.218;10.202.8.244 10.202.8.255         |
-| 10.198.198.0 | 255.255.255.192 | 10.202.48.1    | 10.202.48.1;10.202.48.27 10.202.48.63        | 10.202.48.1 10.202.48.26;10.202.48.52 10.202.48.63          |
+<style>
+</style>
 
-Distr-Floor-5:
+|              |               |              |                                               |                                               |
+| ------------ | ------------- | ------------ | --------------------------------------------- | --------------------------------------------- |
+| Сеть         | Маска         | Шлюз         | Исключаемые адреса DHCP-1                     | Исключаемые адреса DHCP-2                     |
+| 10.196.44.0  | 255.255.254.0 | 10.196.44.1  | 10.196.44.1; 10.196.45.0<br> 10.196.45.255    | 10.196.44.1; 10.196.44.0<br> 10.196.44.255    |
+| 10.196.70.0  | 255.255.254.0 | 10.196.70.1  | 10.196.70.1; 10.196.71.0<br> 10.196.71.255    | 10.196.70.1; 10.196.70.0<br> 10.196.70.255    |
+| 10.197.44.0  | 255.255.254.0 | 10.197.44.1  | 10.197.44.1; 10.197.45.0<br> 10.197.45.255    | 10.197.44.1; 10.197.44.0<br> 10.197.44.255    |
+| 10.197.70.0  | 255.255.254.0 | 10.197.70.1  | 10.197.70.1; 10.197.71.0<br> 10.197.71.255    | 10.197.70.1; 10.197.70.0<br> 10.197.70.255    |
+| 10.197.128.0 | 255.255.254.0 | 10.197.128.1 | 10.197.128.1; 10.197.129.0<br> 10.197.129.255 | 10.197.128.1; 10.197.128.0<br> 10.197.128.255 |
+| 10.198.128.0 | 255.255.254.0 | 10.198.128.1 | 10.198.128.1; 10.198.129.0<br> 10.198.129.255 | 10.198.128.1; 10.198.128.0<br> 10.198.128.255 |
+| 10.198.198.0 | 255.255.254.0 | 10.198.198.1 | 10.198.198.1; 10.198.199.0<br> 10.198.199.255 | 10.198.198.1; 10.198.198.0<br> 10.198.198.255 |
+
+DHCP-1:
 
 ```
 en
 conf t
-ip dhcp excluded-address 10.200.37.129
-ip dhcp excluded-address 10.200.37.155 10.200.37.191    
-ip dhcp excluded-address 10.200.40.193
-ip dhcp excluded-address 10.200.40.219 10.200.40.255    
-ip dhcp excluded-address 10.200.101.129
-ip dhcp excluded-address 10.200.101.155 10.200.101.191 
-ip dhcp excluded-address 10.200.112.1
-ip dhcp excluded-address 10.200.112.27 10.200.112.63     
-ip dhcp excluded-address 10.202.5.129
-ip dhcp excluded-address 10.202.5.155 10.202.5.191       
-ip dhcp excluded-address 10.202.8.193
-ip dhcp excluded-address 10.202.8.219 10.202.8.255       
-ip dhcp excluded-address 10.202.48.1
-ip dhcp excluded-address 10.202.48.27 10.202.48.63        
-ip dhcp excluded-address 10.204.24.193
-ip dhcp excluded-address 10.204.24.219 10.204.24.255    
-ip dhcp excluded-address 10.204.25.1
-ip dhcp excluded-address 10.204.25.27 10.204.25.63  
+hostname DHCP-1
 
-ip dhcp pool Distr_5_Access_2_Accounting
-network 10.200.40.192 255.255.255.192
-default-router 10.200.40.193
+int e0/0
+ip addr 10.223.248.46 255.255.255.254
+no shut
+
+int loopback 0
+ip addr 10.223.244.23 255.255.255.255
 
 
-ip dhcp pool Distr_5_Access_2_HR
-network 10.200.37.128 255.255.255.192
-default-router 10.200.37.129
-
-ip dhcp pool Distr_5_Access_4_HR
-network 10.200.101.128 255.255.255.192
-default-router 10.200.101.129
-
-ip dhcp pool Distr_5_Access_4_Wi-Fi
-network 10.200.112.0 255.255.255.192
-default-router 10.200.112.1
-
-ip dhcp pool Distr_6_Access_1_HR
-network 10.202.5.128 255.255.255.192
-default-router 10.202.5.129
-
-ip dhcp pool Distr_6_Access_1_Accounting
-network 10.202.8.192 255.255.255.192
-default-router 10.202.8.193
-
-ip dhcp pool Distr_6_Access_2_Wi-Fi
-network 10.202.48.0 255.255.255.192
-default-router 10.202.48.1
 
 
-ip dhcp pool Distr_7_Access_1_Srv-Print
-network 10.204.24.192 255.255.255.192
-default-router 10.204.24.193
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+eigrp router-id 10.223.244.23
+af-interface default
+passive-interface
+exit-af-interface
 
-ip dhcp pool Distr_7_Access_1_Srv-Voice
-network 10.204.25.0 255.255.255.192
-default-router 10.204.25.1
+af-interface ethernet 0/0
+no passive-interface
+exit-af-interface
+
+network 10.223.244.23 0.0.0.0
+network 10.223.248.46 0.0.0.1
+
+
+ip dhcp excluded-address  10.196.44.1
+ip dhcp excluded-address  10.196.45.0 10.196.45.255
+ip dhcp excluded-address  10.196.70.1
+ip dhcp excluded-address  10.196.71.0 10.196.71.255
+ip dhcp excluded-address  10.197.44.1
+ip dhcp excluded-address  10.197.45.0 10.197.45.255
+ip dhcp excluded-address  10.197.70.1
+ip dhcp excluded-address  10.197.71.0 10.197.71.255
+ip dhcp excluded-address  10.197.128.1
+ip dhcp excluded-address  10.197.129.0 10.197.129.255
+ip dhcp excluded-address  10.198.128.1
+ip dhcp excluded-address  10.198.129.0 10.198.129.255
+ip dhcp excluded-address  10.198.198.1
+ip dhcp excluded-address  10.198.199.0 10.198.199.255
+
+
+ip dhcp pool Floor_5_HR
+network 10.196.44.0 255.255.254.0
+default-router 10.196.44.1
+
+ip dhcp pool Floor_5_Accounting
+network 10.196.70.0 255.255.254.0
+default-router 10.196.70.1
+
+ip dhcp pool Floor_6_HR
+network 10.197.44.0 255.255.254.0
+default-router 10.197.44.1
+
+ip dhcp pool Floor_6_Accounting
+network 10.197.70.0 255.255.254.0
+default-router 10.197.70.1
+
+ip dhcp pool Floor_6_Wi_Fi
+network 10.197.128.0 255.255.254.0
+default-router 10.197.128.1
+
+
+
+ip dhcp pool Floor_7_Wi_Fi
+network 10.198.128.0 255.255.254.0
+default-router 10.198.128.1
+
+ip dhcp pool Floor_7_Srv_Print
+network 10.198.198.0 255.255.254.0
+default-router 10.198.198.1
+
+
 
 end
 wr
 ```
 
-Distr-Floor-6:
+DHCP-2:
 
 ```
 en
 conf t
+hostname DHCP-2
+
+int loopback 0
+ip addr 10.223.244.24 255.255.255.255
+
+int e0/0
+ip addr 10.223.248.49 255.255.255.254
+no shut
 
 
-ip dhcp excluded-address 10.200.37.129 10.200.37.154
-ip dhcp excluded-address 10.200.37.180 10.200.37.191
-ip dhcp excluded-address 10.200.40.193 10.200.40.218
-ip dhcp excluded-address 10.200.40.244 10.200.40.255
-ip dhcp excluded-address 10.200.101.129 10.200.101.154
-ip dhcp excluded-address 10.200.101.180 10.200.101.191
-ip dhcp excluded-address 10.200.112.1 10.200.112.26
-ip dhcp excluded-address 10.200.112.52 10.200.112.63
-ip dhcp excluded-address 10.202.5.129 10.202.5.154
-ip dhcp excluded-address 10.202.5.180 10.202.5.191
-ip dhcp excluded-address 10.202.8.193 10.202.8.218
-ip dhcp excluded-address 10.202.8.244 10.202.8.255
-ip dhcp excluded-address 10.202.48.1 10.202.48.26
-ip dhcp excluded-address 10.202.48.52 10.202.48.63
-ip dhcp excluded-address 10.204.24.193 10.204.24.218
-ip dhcp excluded-address 10.204.24.244 10.204.24.255
-ip dhcp excluded-address 10.204.25.1 10.204.25.26
-ip dhcp excluded-address 10.204.25.52 10.204.25.63
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+eigrp router-id 10.223.244.24
+af-interface default
+passive-interface
+exit-af-interface
 
-ip dhcp pool Distr_5_Access_2_Accounting
-network 10.200.40.192 255.255.255.192
-default-router 10.200.40.193
+af-interface ethernet 0/0
+no passive-interface
+exit-af-interface
+
+network 10.223.244.24 0.0.0.0
+network 10.223.248.48 0.0.0.1
 
 
-ip dhcp pool Distr_5_Access_2_HR
-network 10.200.37.128 255.255.255.192
-default-router 10.200.37.129
+ip dhcp excluded-address  10.196.44.1
+ip dhcp excluded-address  10.196.44.0 10.196.44.255
+ip dhcp excluded-address  10.196.70.1
+ip dhcp excluded-address  10.196.70.0 10.196.70.255
+ip dhcp excluded-address  10.197.44.1
+ip dhcp excluded-address  10.197.44.0 10.197.44.255
+ip dhcp excluded-address  10.197.70.1
+ip dhcp excluded-address  10.197.70.0 10.197.70.255
+ip dhcp excluded-address  10.197.128.1
+ip dhcp excluded-address  10.197.128.0 10.197.128.255
+ip dhcp excluded-address  10.198.128.1
+ip dhcp excluded-address  10.198.128.0 10.198.128.255
+ip dhcp excluded-address  10.198.198.1
+ip dhcp excluded-address  10.198.198.0 10.198.198.255
 
-ip dhcp pool Distr_5_Access_4_HR
-network 10.200.101.128 255.255.255.192
-default-router 10.200.101.129
+ip dhcp pool Floor_5_HR
+network 10.196.44.0 255.255.254.0
+default-router 10.196.44.1
 
-ip dhcp pool Distr_5_Access_4_Wi-Fi
-network 10.200.112.0 255.255.255.192
-default-router 10.200.112.1
+ip dhcp pool Floor_5_Accounting
+network 10.196.70.0 255.255.254.0
+default-router 10.196.70.1
 
-ip dhcp pool Distr_6_Access_1_HR
-network 10.202.5.128 255.255.255.192
-default-router 10.202.5.129
+ip dhcp pool Floor_6_HR
+network 10.197.44.0 255.255.254.0
+default-router 10.197.44.1
 
-ip dhcp pool Distr_6_Access_1_Accounting
-network 10.202.8.192 255.255.255.192
-default-router 10.202.8.193
+ip dhcp pool Floor_6_Accounting
+network 10.197.70.0 255.255.254.0
+default-router 10.197.70.1
 
-ip dhcp pool Distr_6_Access_2_Wi-Fi
-network 10.202.48.0 255.255.255.192
-default-router 10.202.48.1
+ip dhcp pool Floor_6_Wi_Fi
+network 10.197.128.0 255.255.254.0
+default-router 10.197.128.1
 
 
-ip dhcp pool Distr_7_Access_1_Srv-Print
-network 10.204.24.192 255.255.255.192
-default-router 10.204.24.193
 
-ip dhcp pool Distr_7_Access_1_Srv-Voice
-network 10.204.25.0 255.255.255.192
-default-router 10.204.25.1
+ip dhcp pool Floor_7_Wi_Fi
+network 10.198.128.0 255.255.254.0
+default-router 10.198.128.1
+
+ip dhcp pool Floor_7_Srv_Print
+network 10.198.198.0 255.255.254.0
+default-router 10.198.198.1
+
+
 
 end
 wr
 ```
 
-На коммутаторах доступа укажем адреса серверов DHCP. Адреса указываем с Loopback-интерфейсов.
+На стеках доступа укажем адреса серверов DHCP. Адреса указываем с Loopback-интерфейсов.
 
-Access-Floor-5-2:
+Access-Stack-Floor-05:
 
 ```
 en
 conf t
 int vlan 36
-ip helper-address 10.254.2.5
-ip helper-address 10.254.2.6
+ip helper-address 10.223.244.23
+ip helper-address 10.223.244.24
 
 int vlan 23
-ip helper-address 10.254.2.5
-ip helper-address 10.254.2.6
+ip helper-address 10.223.244.23
+ip helper-address 10.223.244.24
 
 
 end
 wr
 ```
 
-Access-Floor-5-4:
-
-```
-en
-conf t
-int vlan 65
-ip helper-address 10.254.2.5
-ip helper-address 10.254.2.6
-
-int vlan 23
-ip helper-address 10.254.2.5
-ip helper-address 10.254.2.6
-
-
-end
-wr
-```
-
-Access-Floor-6-1:
+Access-Stack-Floor-06:
 
 ```
 en
 conf t
 int vlan 36
-ip helper-address 10.254.2.5
-ip helper-address 10.254.2.6
+ip helper-address 10.223.244.23
+ip helper-address 10.223.244.24
 
 int vlan 23
-ip helper-address 10.254.2.5
-ip helper-address 10.254.2.6
+ip helper-address 10.223.244.23
+ip helper-address 10.223.244.24
+
+int vlan 65
+ip helper-address 10.223.244.23
+ip helper-address 10.223.244.24
 
 
 end
 wr
 ```
 
-Access-Floor-6-2:
+Access-Stack-Floor-07:
 
 ```
 en
 conf t
 int vlan 65
-ip helper-address 10.254.2.5
-ip helper-address 10.254.2.6
+ip helper-address 10.223.244.23
+ip helper-address 10.223.244.24
 
-
-end
-wr
-```
-
-Access-Floor-7-1:
-
-```
-en
-conf t
 int vlan 100
-ip helper-address 10.254.2.5
-ip helper-address 10.254.2.6
-
-en
-conf t
-int vlan 101
-ip helper-address 10.254.2.5
-ip helper-address 10.254.2.6
+ip helper-address 10.223.244.23
+ip helper-address 10.223.244.24
 
 
 end
 wr
 ```
+
+
 
 Проверяем:
 
-![](screenshots/2021-06-14-02-06-19-image.png)
+![](screenshots/2021-06-29-01-28-50-image.png)
 
-В работе адреса для Srv-Print и Srv-Voice выдаются по DHCP. В реальности так делать не стоит. Но для демонстрации, что в каждой подключенной подсети настроена работа DHCP, вполне подходит.
 
-Отключим Distr-Floor-5 и запросим адреса заново:
 
-![](screenshots/2021-06-14-02-10-03-image.png)
+В работе адреса для Srv-Print выдаются по DHCP. В реальности так делать не стоит. Но для демонстрации, что в каждой подключенной подсети настроена работа DHCP, вполне подходит. Компьютер на пятом этаже получает адрес, может связаться с ядром и сервером печати. Причем адреса получены от DHCP-2.
 
-Видим, что шлюзы остались прежними, адреса сместились в область, которая выдается вторым DHCP-сервером.
+Отключим DHCP-2 и запросим адреса заново, затем включим обратно и отключим DHCP-1:
 
-Но для Accounting-1 сервер отозвался не сразу. Возможно, из-за виртуализации?
+![](screenshots/2021-06-29-01-33-00-image.png)
+
+Видим, что шлюзы остались прежними, адреса сместились в область, которая выдается другим DHCP-сервером.
+
+
+
+
 
 ## <a name="realization_providers"></a>Настройка провайдерской сети
 
