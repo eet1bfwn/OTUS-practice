@@ -23,7 +23,6 @@
          5. [Результирующие правила адресации клиентских подсетей.](#realization_addr_result_client)
          6. [Результирующие правила адресации линков стек распределения-стек доступа.](#realization_addr_result_distr_access_link)
          7. [Таблица с адресами сетей устройств, расположенных в лабораторной работе.](#realization_addr_result_summary)
-         8. 
       2. [Базовая настройка сетевых устройств.](#realization_base_config)
       3. [Настройка коммутаторов доступа.](#realization_acess_config)
       4. [Настройка динамической маршрутизации.](#realization_dynamic_config)
