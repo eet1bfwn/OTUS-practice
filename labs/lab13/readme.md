@@ -30,37 +30,117 @@
 
 2. Если  из автономной системы выход через два маршрутизатора, то при потере связи с интернетом у первого маршрутизатора он останется доступным через второй маршрутизатор. Туннель не порвется.
 
-Реализуем сперва наименее гибкий вариант для сравнения - с каждого физического интерфейса.
+Вариант 1 был реализован, конфигурация не приводится. Перейдем сразу к варианту с Loopback-интерфейсами.
+
+### Настройка Loopback
+
+![](screenshots/2021-07-03-16-21-45-image.png)
+
+В Москве на R14 создадим Lo14, на R15 Lo15; в СПб на R18 создадим на R18 Lo18. Выполним их анонсы в BGP.
+
+R14:
+
+```
+en
+conf t
+no ip route 20.177.0.14 255.255.255.255 Null0
+
+int Lo14
+ip addr 20.177.0.14 255.255.255.255
+no shut
+
+
+no ip nat inside source list ACL_NAT pool POOL_NAT_OUT overload
+ip nat inside source list ACL_NAT interface Lo14 overload
+no ip nat pool POOL_NAT_OUT 20.177.0.14 20.177.0.14 netmask 255.255.255.252
+
+router bgp 1001
+address-family ipv4 unicast
+network 20.177.0.14 mask 255.255.255.255
+
+end
+wr
+```
+
+R15:
+
+```
+en
+conf t
+no ip route 20.177.0.15 255.255.255.255 Null0
+
+int Lo15
+ip addr 20.177.0.15 255.255.255.255
+no shut
+
+
+no ip nat inside source list ACL_NAT pool POOL_NAT_OUT overload
+ip nat inside source list ACL_NAT interface Lo15 overload
+no ip nat pool POOL_NAT_OUT 20.177.0.15 20.177.0.15 netmask 255.255.255.252
+
+router bgp 1001
+address-family ipv4 unicast
+network 20.177.0.15 mask 255.255.255.255
+
+end
+wr
+```
+
+NAT продолжает работать при конфигурации NAT с Loopback:
+
+![](screenshots/2021-07-03-16-30-11-image.png)
+
+R18 (для разнообразия сделаем анонс не одного Loopback, а целой подсети 20.78.0.0/16):
+
+```
+en
+conf t
+ip route 20.78.0.0 255.255.255.0 Null0
+
+int Lo18
+ip addr 20.78.0.18 255.255.255.255
+no shut
+
+
+router bgp 2042
+address-family ipv4 unicast
+network 20.78.0.0 mask 255.255.0.0
+
+end
+wr
+```
 
 ### Адресация
 
-Для адресов туннельных интерфейсов будем использовать сеть 10.255.0.0/16. Каждый адрес будет располагаться в сети 10.255.255.N/31. Или лучше делать сеть /24????
+![](screenshots/2021-07-03-16-44-52-image.png)
 
-|            | Peer-1 | Peer-1-White IP | Peer-1-Tunnel IP | Peer-2 | Peer-2-White IP | Peer-2-Tunnel IP |
-| ---------- | ------ | --------------- | ---------------- | ------ | --------------- | ---------------- |
-| Tunnel 110 | R15    | 20.255.255.17   | 10.255.255.0     | R18    | 20.255.255.30   | 10.255.255.1     |
-| Tunnel 120 | R15    | 20.255.255.17   | 10.255.255.2     | R18    | 20.255.255.34   | 10.255.255.3     |
-| Tunnel 210 | R14    | 20.255.255.9    | 10.255.255.4     | R18    | 20.255.255.30   | 10.255.255.5     |
-| Tunnel 220 | R14    | 20.255.255.9    | 10.255.255.6     | R18    | 20.255.255.34   | 10.255.255.7     |
+Для адресов туннельных интерфейсов будем использовать сеть 10.255.0.0/16. 
 
-### Настройка туннелей R15-R18
+Каждый адрес будет располагаться в сети 10.255.255.N/31. Или лучше делать сеть /24????
+
+|             | Peer-1 | Peer-1-White IP | Peer-1-Tunnel IP | Peer-2 | Peer-2-White IP | Peer-2-Tunnel IP |
+| ----------- | ------ | --------------- | ---------------- | ------ | --------------- | ---------------- |
+| Tunnel 1518 | R15    | 20.177.0.15     | 10.255.255.0     | R18    | 20.78.0.18      | 10.255.255.1     |
+| Tunnel 1418 | R14    | 20.177.0.14     | 10.255.255.2     | R18    | 20.78.0.18      | 10.255.255.3     |
+
+### Настройка туннеля R15-R18, туннеля R14-R18.
 
 R18:
 
 ```
 en
 conf t
-interface tunnel 110
+interface tunnel 1518
 ip addr 10.255.255.1 255.255.255.254
-tunnel source 20.255.255.30
-tunnel destination 20.255.255.17
+tunnel source 20.78.0.18
+tunnel destination 20.177.0.15
 ip mtu 1400
 ip tcp adjust-mss 1360
 
-interface tunnel 120
+interface tunnel 1418
 ip addr 10.255.255.3 255.255.255.254
-tunnel source 20.255.255.34
-tunnel destination 20.255.255.17
+tunnel source 20.78.0.18
+tunnel destination 20.177.0.14
 ip mtu 1400
 ip tcp adjust-mss 1360
 
@@ -74,20 +154,28 @@ R15:
 ```
 en
 conf t
-interface tunnel 110
+interface tunnel 1518
 ip addr 10.255.255.0 255.255.255.254
-tunnel source 20.255.255.17
-tunnel destination 20.255.255.30
+tunnel source 20.177.0.15
+tunnel destination 20.78.0.18
 ip mtu 1400
 ip tcp adjust-mss 1360
 
-interface tunnel 120
+end
+wr
+```
+
+R14:
+
+```
+en
+conf t
+interface tunnel 1418
 ip addr 10.255.255.2 255.255.255.254
-tunnel source 20.255.255.17
-tunnel destination 20.255.255.34
+tunnel source 20.177.0.14
+tunnel destination 20.78.0.18
 ip mtu 1400
 ip tcp adjust-mss 1360
-
 
 end
 wr
@@ -95,7 +183,7 @@ wr
 
 Туннели поднялись, связь между маршрутизаторами через туннели есть:
 
-![](screenshots/2021-06-26-12-00-06-image.png)
+![](screenshots/2021-07-03-16-51-56-image.png)
 
 надо ли указывать tunnel mode gre????
 
@@ -114,19 +202,41 @@ af-interface default
 passive-interface
 exit-af-interface
 
-af-interface tunnel 110
-no passive-interface
-exit-af-interface
-
-af-interface tunnel 120
+af-interface tunnel 1518
 no passive-interface
 exit-af-interface
 
 network 10.177.0.0 0.0.255.255
 network 10.255.255.0 0.0.0.1
-network 10.255.255.2 0.0.0.1
 
 eigrp router-id 1.0.0.15
+
+
+end
+wr
+```
+
+R14:
+
+```
+en
+conf t
+router eigrp NG
+
+address-family ipv4 unicast autonomous-system 1
+
+af-interface default
+passive-interface
+exit-af-interface
+
+af-interface tunnel 1418
+no passive-interface
+exit-af-interface
+
+network 10.177.0.0 0.0.255.255
+network 10.255.255.2 0.0.0.1
+
+eigrp router-id 1.0.0.14
 
 
 end
@@ -152,11 +262,11 @@ af-interface Ethernet 0/1
 no passive-interface
 exit-af-interface
 
-af-interface Tunnel 110
+af-interface Tunnel 1518
 no passive-interface
 exit-af-interface
 
-af-interface Tunnel 120
+af-interface Tunnel 1418
 no passive-interface
 exit-af-interface
 
@@ -188,7 +298,7 @@ wr
 
 На короткий момент появилось соседство, но потом пропало. Плюс туннели переходят в down:
 
-![](screenshots/2021-06-26-14-04-53-image.png)
+![](screenshots/2021-07-03-16-55-13-image.png)
 
 Это происходит из-за анонса белого адреса туннеля маршрутизатором R18. С прошлых лабораторных работ этот анонс был незамечен, да и вообще не нужен. Отключаем.
 
@@ -208,9 +318,13 @@ wr
 
 Туннели поднялись, соседство установилось:
 
-![](screenshots/2021-06-26-14-21-17-image.png)
+![](screenshots/2021-07-03-16-56-44-image.png)
 
-Но на R15 появился маршрут D EX до сети 20.78.0.0/24. Это сеть, которая анонсируется с R18 путем добавления статического маршрута. В EIGRP была задана команда редистрибуции статики, что тоже нужно убрать. 
+Но на R15 проблема продолжается:
+
+![](screenshots/2021-07-03-17-06-05-image.png)
+
+На R15 анонсируется маршрут до сети 20.78.0.0/16. Это сеть, которая анонсируется с R18 путем добавления статического маршрута. В EIGRP была задана команда редистрибуции статики, что тоже нужно убрать. 
 
 R18:
 
@@ -235,7 +349,7 @@ wr
 
 Пришли маршруты, которые нужны:
 
-![](screenshots/2021-06-26-14-44-36-image.png)
+![](screenshots/2021-07-03-17-08-17-image.png)
 
 Лучше их суммаризировать на R18.
 
@@ -246,10 +360,10 @@ en
 conf t
 router eigrp NG
 address-family ipv4 unicast autonomous-system 1
-af-interface tunnel 110
+af-interface tunnel 1518
 summary-address 10.78.0.0/16
 exit-af-interface
-af-interface tunnel 120
+af-interface tunnel 1418
 summary-address 10.78.0.0/16
 exit-af-interface
 
@@ -264,10 +378,7 @@ en
 conf t
 router eigrp NG
 address-family ipv4 unicast autonomous-system 1
-af-interface tunnel 110
-summary-address 10.177.0.0/16
-exit-af-interface
-af-interface tunnel 120
+af-interface tunnel 1518
 summary-address 10.177.0.0/16
 exit-af-interface
 
@@ -275,108 +386,87 @@ end
 wr
 ```
 
-Получили суммарные маршруты на R15, R18:
-
-![](screenshots/2021-06-26-14-55-50-image.png)
-
-Но связи между компьютерами все равно нет:
-
-![](screenshots/2021-06-26-14-57-06-image.png)
-
-Причина - пакеты пытаются дойти через R14, а не R15. На R14 тоже необходимы туннели. Учитывая выполненное на R15, конфигурируем R14:
-
-R14:
+И на R14:
 
 ```
 en
 conf t
-
-interface tunnel 210
-ip addr 10.255.255.4 255.255.255.254
-tunnel source 20.255.255.9
-tunnel destination 20.255.255.30
-ip mtu 1400
-ip tcp adjust-mss 1360
-
-interface tunnel 220
-ip addr 10.255.255.6 255.255.255.254
-tunnel source 20.255.255.9
-tunnel destination 20.255.255.34
-ip mtu 1400
-ip tcp adjust-mss 1360
-
 router eigrp NG
 address-family ipv4 unicast autonomous-system 1
-
-af-interface default
-passive-interface
-exit-af-interface
-
-af-interface tunnel 210
-no passive-interface
+af-interface tunnel 1418
 summary-address 10.177.0.0/16
 exit-af-interface
-
-af-interface tunnel 220
-no passive-interface
-summary-address 10.177.0.0/16
-exit-af-interface
-
-network 10.177.0.0 0.0.255.255
-network 10.255.255.4 0.0.0.1
-network 10.255.255.6 0.0.0.1
-
-eigrp router-id 1.0.0.14
 
 end
 wr
 ```
 
-R18:
+Получили суммарные маршруты на R14, R15, R18:
+
+![](screenshots/2021-07-03-17-14-27-image.png)
+
+R14 и R15 находятся в одной автономной системе и географически расположены в Москве. Однако они знают, что могут добраться до своих туннельных интерфейсов через соседа R18 в СПб. Это не оптимально, поэтому на R14-15 настроим соседство EIGRP. ??? Можно было бы настроить и через OSPF, но AD EIGRP перебьет такие маршруты и связь все равно будет через СПб.???
+
+R14-15:
 
 ```
 en
 conf t
-
-interface tunnel 210
-ip addr 10.255.255.5 255.255.255.254
-tunnel source 20.255.255.30
-tunnel destination 20.255.255.9
-ip mtu 1400
-ip tcp adjust-mss 1360
-
-interface tunnel 220
-ip addr 10.255.255.7 255.255.255.254
-tunnel source 20.255.255.34
-tunnel destination 20.255.255.9
-ip mtu 1400
-ip tcp adjust-mss 1360
-
 router eigrp NG
+
 address-family ipv4 unicast autonomous-system 1
 
-af-interface Tunnel 210
+af-interface Ethernet 0/0
 no passive-interface
-summary-address 10.78.0.0/16
 exit-af-interface
 
-af-interface Tunnel 220
+af-interface Ethernet 0/1
 no passive-interface
-summary-address 10.78.0.0/16
 exit-af-interface
 
-network 10.255.255.4 0.0.0.1
-network 10.255.255.6 0.0.0.1
+network 10.177.255.0 0.0.0.7
+network 10.177.255.8 0.0.0.7
+
+
 
 end
 wr
 ```
 
-Соседство поднялось:
+Результат:
 
-![](screenshots/2021-06-26-15-14-46-image.png)
+![](screenshots/2021-07-03-17-20-49-image.png)
 
-Но связи между пк по-прежнему нет...
+Маршруты суммаризируем для уменьшения количества записей.
+
+R14-15:
+
+```
+en
+conf t
+router eigrp NG
+address-family ipv4 unicast autonomous-system 1
+af-interface Ethernet 0/0
+summary-address 10.177.0.0/16
+exit-af-interface
+
+af-interface Ethernet 0/1
+summary-address 10.177.0.0/16
+exit-af-interface
+
+end
+wr
+```
+
+Результат - суммаризированные маршруты:
+
+![](screenshots/2021-07-03-17-25-01-image.png)
+
+Но связи между компьютерами нет:
+
+![](screenshots/2021-07-03-17-28-41-image.png)
+
+Видим, что вероятно проблема в СПб - маршрутизатор получает пакет, но не пожет доставить до PC8.
 
 Идем в СПБ и пробуем R18->VPC8:
 
@@ -440,7 +530,7 @@ summary-address 10.78.0.0/16
 
 ![](screenshots/2021-06-26-15-27-51-image.png)
 
-Какой выход? На R18 обязательно долждны быть маршруты, которые перебьют суммарный маршрут с маской 16. Чтобы они появились, мы должны получать их от R16 и R17.
+Какой выход? На R18 обязательно должны быть маршруты, которые перебьют суммарный маршрут с маской 16. Чтобы они появились, мы должны получать их от R16 и R17.
 
 ![](screenshots/2021-06-26-15-29-54-image.png)
 
@@ -467,15 +557,11 @@ wr
 
 ## <a name="head2"></a>Настроите DMVMN между Москва и Чокурдах, Лабытнанги
 
-![](screenshots/2021-06-26-16-35-02-image.png)
-
-Поскольку ДЗ относится к занятию по DMVP, касающемуся Phace 1,2, то будем реализовывать DMVPN PHASE2.
-
 Хабом выберем Москву. Каждый маршрутизатор Москвы будет хабом.
 
-Добавим в Лабытнангах хост, чтобы выполнять проверку связи, NAT настраивать не будем:
+Добавим в Лабытнангах хост, чтобы выполнять проверку связи через поднятые туннели, NAT настраивать не будем:
 
-![](screenshots/2021-06-26-16-53-45-image.png)
+![](screenshots/2021-07-03-17-36-26-image.png)
 
 R27:
 
@@ -497,77 +583,305 @@ end
 wr
 ```
 
-### Адресация
+### Планирование схемы
 
 Для каждого хаба нужно выделить свою сеть, в которой будут находится еще и споки. ???Они обязательно должны быть в одной сети???
 
-Для адресов туннельных интерфейсов будем использовать сеть 10.255.0.0/16, как и при соединении точка-точка. Сеть для хаба R15 - 10.255.15.0/25, сеть для хаба R14 - 10.255.14.0/24.
+В DMVPN рекомендуются три варианта дизайна:
 
-Схема не подходит под 3 рекомендуемых топологии. Попробуем проверить, заработает ли такое подключение. С точки зрения избыточности схема позволяет максимально сохранить связность. (Забегая вперед, такой вариант реализовать не удалось.)
+- Single Hub, Dual Cloud - нет избыточности, spoke-to-spoke не будет работать, использовать не стоит.
 
-![](screenshots/2021-06-27-13-46-22-image.png)
+- Dual Hub, Single Cloud - требуется более сложная настройка хабов, между ними также дожен быть тот же туннель.
+
+- Dual Hub, Dual Cloud - настройка типична, туннель между хабами не нужен, выберем этот вариант.
+
+В DMVPN есть особенности (примеры в копиях readme.md):
+
+- на хабе на одном интерфейсе может работать только один туннель,
+
+- на споке на одном интерфейсе могут работать разные туннели,
+
+- на споке на разных интерфейсах не могут работать одинаковые туннели.
+
+Исходя из ограничений, реализуем следующие туннели:
+
+![](screenshots/2021-07-03-18-14-31-image.png)
+
+До R27 поднимем DMVPN на уже использующихся Loopback. Это будут туннели Tunnel 14 и Tunnel 15. К этим же туннелям подключим туннель с e0/1 R28. Второй интерфейс R28 e0/0 к этим туннелям уже не подключить, поэтому создадим еще два туннеля Tunnel 114, Tunnel 115. Для них придется завести еще Loopback-интерфейсы на хабах.
+
+Сначала реализуем фазу 2.
+
+Настраиваем и анонсируем Loopback 114. R14:
+
+```
+en
+conf t
+int Loopback 114
+ip addr 20.177.1.14 255.255.255.255
+
+
+router bgp 1001
+address-family ipv4 unicast
+network 20.177.1.14 mask 255.255.255.255
+
+end
+wr
+```
+
+Настраиваем и анонсируем Loopback 115. R15:
+
+```
+en
+conf t
+int Loopback 115
+ip addr 20.177.1.15 255.255.255.255
+
+
+router bgp 1001
+address-family ipv4 unicast
+network 20.177.1.15 mask 255.255.255.255
+
+end
+wr
+```
+
+### Адресация
 
 Адресация хабов:
 
-|             | Peer-1 | network-id | Peer-1-White IP | Peer-1-Tunnel IP |
-| ----------- | ------ | ---------- | --------------- | ---------------- |
-| Tunnel 1110 | R15    | 1110       | 20.255.255.17   | 10.255.151.1     |
-| Tunnel 1210 | R14    | 1210       | 20.255.255.9    | 10.255.141.1     |
-| Tunnel 1120 | R15    | 1120       | 20.255.255.17   | 10.255.152.1     |
-| Tunnel 1220 | R14    | 1220       | 20.255.255.9    | 10.255.142.1     |
+|            | Peer-1 | network-id | Peer-1-White IP | Peer-1-Tunnel IP |
+| ---------- | ------ | ---------- | --------------- | ---------------- |
+| Tunnel 15  | R15    | 15         | 20.177.0.15     | 10.255.15.15     |
+| Tunnel 14  | R14    | 14         | 20.177.0.14     | 10.255.14.14     |
+| Tunnel 115 | R15    | 115        | 20.177.1.15     | 10.255.115.15    |
+| Tunnel 114 | R14    | 114        | 20.177.1.14     | 10.255.114.14    |
 
 Адресация споков:
 
-|             | Peer-1 | network-id | Peer-1-White IP | Peer-1-Tunnel IP | Peer-2 | Peer-2-White IP | Peer-2-Tunnel IP |
-| ----------- | ------ | ---------- | --------------- | ---------------- | ------ | --------------- | ---------------- |
-| Tunnel 1110 | R15    | 1110       | 20.255.255.17   | 10.255.151.1     | R27    | 20.255.255.6    | 10.255.15.10     |
-| Tunnel 1110 | R15    | 1110       | 20.255.255.17   | 10.255.151.1     | R28    | 20.255.255.22   | 10.255.15.20     |
-| Tunnel 1120 | R15    | 1120       | 20.255.255.17   | 10.255.152.1     | R28    | 20.255.255.26   | 10.255.15.21     |
-| Tunnel 1210 | R14    | 1210       | 20.255.255.9    | 10.255.141.1     | R27    | 20.255.255.6    | 10.255.14.10     |
-| Tunnel 1210 | R14    | 1210       | 20.255.255.9    | 10.255.141.1     | R28    | 20.255.255.22   | 10.255.14.20     |
-| Tunnel 1220 | R14    | 1220       | 20.255.255.9    | 10.255.142.1     | R28    | 20.255.255.26   | 10.255.14.21     |
+|            | Peer-1 | network-id | Peer-1-White IP | Peer-1-Tunnel IP | Peer-2 | Peer-2-White IP | Peer-2-Tunnel IP |
+| ---------- | ------ | ---------- | --------------- | ---------------- | ------ | --------------- | ---------------- |
+| Tunnel 15  | R15    | 15         | 20.177.0.15     | 10.255.15.15     | R27    | 20.255.255.6    | 10.255.15.27     |
+| Tunnel 15  | R15    | 15         | 20.177.0.15     | 10.255.15.15     | R28    | 20.255.255.22   | 10.255.15.28     |
+| Tunnel 14  | R14    | 14         | 20.177.0.14     | 10.255.14.14     | R27    | 20.255.255.6    | 10.255.14.27     |
+| Tunnel 14  | R14    | 14         | 20.177.0.14     | 10.255.14.14     | R28    | 20.255.255.22   | 10.255.14.28     |
+| Tunnel 115 | R15    | 115        | 20.177.1.15     | 10.255.115.15    | R28    | 20.255.255.26   | 10.255.115.28    |
+| Tunnel 114 | R14    | 114        | 20.177.1.14     | 10.255.114.14    | R28    | 20.255.255.26   | 10.255.114.28    |
 
-Начнем настройку сперва с R15. R14 пока отключим, чтобы трафик не ходил через него. В туннель будем выдавать суммаризированный маршрут.
+Начнем.
+
+Создаем на R14 два туннельных интерфейса. R14:
+
+```
+en
+conf t
+
+
+int tu 14
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip addr 10.255.14.14 255.255.255.0
+ip nhrp network-id 14
+ip nhrp map multicast dynamic
+tunnel mode gre multipoint
+tunnel source Loopback14
+
+
+int tu 114
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip addr 10.255.114.14 255.255.255.0
+ip nhrp network-id 114
+ip nhrp map multicast dynamic
+tunnel mode gre multipoint
+tunnel source Loopback114
+
+
+end
+wr
+```
+
+Создаем на R15 два туннельных интерфейса. R15:
+
+```
+en
+conf t
+
+
+int tu 15
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip addr 10.255.15.15 255.255.255.0
+ip nhrp network-id 15
+ip nhrp map multicast dynamic
+tunnel mode gre multipoint
+tunnel source Loopback15
+
+
+int tu 115
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip addr 10.255.115.15 255.255.255.0
+ip nhrp network-id 115
+ip nhrp map multicast dynamic
+tunnel mode gre multipoint
+tunnel source Loopback115
+
+
+end
+wr
+```
+
+На R27 настраиваем два туннеля. R27:
+
+```
+en
+conf t 
+int tu 14
+ip addr 10.255.14.27 255.255.255.0
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip nhrp network-id 14
+ip nhrp map multicast 20.177.0.14
+ip nhrp nhs 10.255.14.14
+ip nhrp map 10.255.14.14 20.177.0.14
+tunnel mode gre multipoint
+tunnel source Ethernet 0/0
+
+
+int tu 15
+ip addr 10.255.15.27 255.255.255.0
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip nhrp network-id 15
+ip nhrp map multicast 20.177.0.15
+ip nhrp nhs 10.255.15.15
+ip nhrp map 10.255.15.15 20.177.0.15
+tunnel mode gre multipoint
+tunnel source Ethernet 0/0
+
+end
+wr
+```
+
+Связь до противоположных концов туннелей есть:
+
+![](screenshots/2021-07-03-18-42-06-image.png)
+
+Переходим к настройке R28. R28:
+
+```
+en
+conf t
+int tu 14
+
+ip addr 10.255.14.28 255.255.255.0
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip nhrp network-id 14
+ip nhrp map multicast 20.177.0.14
+ip nhrp nhs 10.255.14.14
+ip nhrp map 10.255.14.14 20.177.0.14
+tunnel mode gre multipoint
+tunnel source Ethernet 0/1
+
+
+int tu 15
+ip addr 10.255.15.28 255.255.255.0
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip nhrp network-id 15
+ip nhrp map multicast 20.177.0.15
+ip nhrp nhs 10.255.15.15
+ip nhrp map 10.255.15.15 20.177.0.15
+tunnel mode gre multipoint
+tunnel source Ethernet 0/1
+
+
+int tu 114
+ip addr 10.255.114.27 255.255.255.0
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip nhrp network-id 114
+ip nhrp map multicast 20.177.1.14
+ip nhrp nhs 10.255.114.14
+ip nhrp map 10.255.114.14 20.177.1.14
+tunnel mode gre multipoint
+tunnel source Ethernet 0/0
+
+
+int tu 115
+ip addr 10.255.115.27 255.255.255.0
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip nhrp network-id 115
+ip nhrp map multicast 20.177.1.15
+ip nhrp nhs 10.255.115.15
+ip nhrp map 10.255.115.15 20.177.1.15
+tunnel mode gre multipoint
+tunnel source Ethernet 0/0
+
+
+end
+wr
+```
+
+Связь есть:
+
+![](screenshots/2021-07-03-18-46-46-image.png)
+
+### Настройка динамической маршрутизации
+
+Как и в случае с обычными туннелями, будем использовать EIGRP.
+
+R14:
+
+```
+en
+conf t
+
+router eigrp NG
+address-family ipv4 unicast autonomous-system 1
+af-interface tunnel 14
+no passive-interface
+summary-address 10.177.0.0 255.255.0.0
+exit-af
+
+af-interface tunnel 114
+no passive-interface
+summary-address 10.177.0.0 255.255.0.0
+exit-af
+
+network 10.255.14.0 0.0.0.255
+network 10.255.114.0 0.0.0.255
+
+end
+wr
+```
 
 R15:
 
 ```
 en
 conf t
-interface tu 1110
-tunnel mode gre multipoint
-ip addr 10.255.151.1 255.255.255.0
-tunnel source 20.255.255.17
-ip mtu 1400
-ip tcp adjust-mss 1360
-
-ip nhrp network-id 1110
-ip nhrp map multicast dynamic
-
-
-
-exit
 
 router eigrp NG
 address-family ipv4 unicast autonomous-system 1
-af-interface tu1110
+af-interface tunnel 15
 no passive-interface
-summary-address 10.177.0.0/16
-exit-af-interface
+summary-address 10.177.0.0 255.255.0.0
+exit-af
 
-af-interface tu1120
+af-interface tunnel 115
 no passive-interface
-summary-address 10.177.0.0/16
-exit-af-interface
+summary-address 10.177.0.0 255.255.0.0
+exit-af
 
-network 10.255.151.0 0.0.0.255
-network 10.255.152.0 0.0.0.255
+network 10.255.15.0 0.0.0.255
+network 10.255.115.0 0.0.0.255
 
 end
 wr
 ```
-
-Настроим спок. В туннель будем выдавать суммаризированный маршрут.
 
 R27:
 
@@ -575,44 +889,132 @@ R27:
 en
 conf t
 
-interface tu 1110
-ip addr 10.255.151.10 255.255.255.0
-tunnel source 20.255.255.6
-tunnel destination 20.255.255.17
-ip mtu 1400
-ip tcp adjust-mss 1360
-ip nhrp network-id 1110
-ip nhrp map multicast 20.255.255.17
-
-
-ip nhrp nhs 10.255.151.1
-ip nhrp map 10.255.151.1 20.255.255.17
-
-exit
-
 router eigrp NG
 address-family ipv4 unicast autonomous-system 1
 af-interface default
 passive-interface
-exit-af-interface
 
-af-interface tu1110
+af-interface tunnel 14
 no passive-interface
-summary-address 10.89.0.0/16
-exit-af-interface
+summary-address 10.89.0.0 255.255.0.0
 
-network 10.255.151.0 0.0.0.255
-network 10.89.0.0 0.0.0.255
+exit-af
+
+af-interface tunnel 15
+summary-address 10.89.0.0 255.255.0.0
+no passive-interface
+exit-af
+
+network 10.255.14.0 0.0.0.255
+network 10.255.15.0 0.0.0.255
+network 10.89.0.0 0.0.255.255
 
 end
 wr
 ```
 
-Связь с ПК в Москве есть:
+![](screenshots/2021-07-03-18-59-40-image.png)
 
-![](screenshots/2021-06-26-17-33-13-image.png)
+Соседство поднялось. ????Но через Tunnel не приходят hello от R14. Почему-то эти пакеты относятся к Tunnel 15 и дропаются. При включенни IPSec все поправится.
 
-Видим, что из Москвы пришел суммаризированный маршрут, причем другие маршруты, которые не попали в эту суммаризацию, продолжают анонсироваться.
+R28:
+
+```
+en
+conf t
+
+router eigrp NG
+address-family ipv4 unicast autonomous-system 1
+
+af-interface default
+passive-interface
+
+af-interface tunnel 14
+summary-address 10.14.0.0 255.255.0.0
+no passive-interface
+exit-af
+
+af-interface tunnel 15
+summary-address 10.14.0.0 255.255.0.0
+no passive-interface
+exit-af
+
+af-interface tunnel 114
+summary-address 10.14.0.0 255.255.0.0
+no passive-interface
+exit-af
+
+af-interface tunnel 115
+summary-address 10.14.0.0 255.255.0.0
+no passive-interface
+exit-af
+
+network 10.255.14.0 0.0.0.255
+network 10.255.15.0 0.0.0.255
+network 10.255.114.0 0.0.0.255
+network 10.255.115.0 0.0.0.255
+network 10.14.0.0 0.0.255.255
+end
+wr
+```
+
+R28 получает не все маршруты:
+
+![](screenshots/2021-07-03-19-31-56-image.png)
+
+Нет маршрутов, которые должны приходит от соседей по DMVPN - через интерфейс Tunnel 15. Нужно на хабе отключить split-horizon, заодно убрать установку на хабе себя в качестве следующего хопа.
+
+R15:
+
+```
+en
+conf t
+router eigrp NG
+address-family ipv4 unicast autonomous-system 1
+
+af-interface tunnel 15
+no split-horizon
+no next-hop-self
+exit-af-interface
+
+
+af-interface tunnel 115
+no split-horizon
+no next-hop-self
+exit-af-interface
+
+end
+wr
+```
+
+Спокам начали приходить все маршруты:
+
+![](screenshots/2021-07-03-19-36-36-image.png)
+
+Причем все же часть маршрутов идет через хаб. ??? Причина - маршрут идет напрямую, только если спок находится в той же сети. Если в другой - то маршрут идет через хаб.
+
+Аналогично для хаба R14. R14:
+
+```
+en
+conf t
+router eigrp NG
+address-family ipv4 unicast autonomous-system 1
+
+af-interface tunnel 14
+no split-horizon
+no next-hop-self
+exit-af-interface
+
+
+af-interface tunnel 114
+no split-horizon
+no next-hop-self
+exit-af-interface
+
+end
+wr
+```
 
 ----
 
@@ -632,11 +1034,61 @@ R15 видит соседа, R27 - нет. Вывод - по туннелю от
 
 ----
 
-Продолжим настрйку и перейдем в Чокурдах.
+Можно ли на хабе просуммировать маршуты? Подробности в копии readme.md. Здесь приведен только вывод: хаб получает маршруты и суммаризирует их, но не может перестать ставить свой хоп, т.к. маршрут получен один, значит и хоп будет один на весь суммарный префикс. Но также хаб добавляет свой специфический маршут, что странно.
 
-![](screenshots/2021-06-26-17-37-52-image.png)
+## <a name="head3"></a>Все узлы в офисах в лабораторной работе должны иметь IP связность
 
-Настроим сперва туннель через e0/0. Его адрес будет находится в той же сети, что и ранее настроенный туннель Лабытнанги.
+
+
+Проверим связь между хостами сетей R27 и R28:
+
+![](screenshots/2021-07-05-16-26-09-image.png)
+
+
+
+Связь есть, причем на R28 настроен PBR, который должен пускать входящие на внутренние интерфейсы пакеты в сторону провайдера, минуя таблицу маршрутизации. Однако поскольку связь есть с узлом на другой площадке, можно сделать предположение, что PBR не работает для серых адресов?????
+
+
+
+------
+
+Далее остался ненужный участкок отчета, в котором связи между узлами не было. Причина оказалась проста - R28 анонсировал сеть 10.15.0.0, а не 10.14.0.0.
+
+
+
+
+
+![](screenshots/2021-07-03-19-48-18-image.png)
+
+Причина в R14. На нем отключены временно туннели Tunnel 14, 114, чтобы не флудить ошибками соседства на споках. Отключим R14 полностью. При настройке IPSec эта ошибка пропадет и мы сможем включить R14 обратно. Также гасим на R27 и R28 туннели Tunnel 14, 114.
+
+Появилась новая ошибка - трафик на R28 не идет в туннель. Причина - PBR. На inside интервфейс приходит трафик, матчится и отправляется на внешние интерфейсы, где происходит трансляция.
+
+Сейчас в зависимости от четности третьего октета идет NAT на одного из двух провайдеров. Нам же надо направлять в NAT только пакеты для адресов интернета, остальные - в туннели. Причем на уровне туннелей балансировка будет работать автоматом, но вот к какому провайдеру выпускать такой пакет, нужна дополнительная настройка. Ее делать не будем.
+
+Поправим ACL - будем осуществлять PBR только для белых адресов. Остальные не смотрим, и они пойдут по таблице маршутизации.
+
+Сперва поправим трекинг:
+
+```
+en
+conf t
+no ip sla 1
+ip sla 1
+ icmp-echo 20.177.0.15 source-interface Ethernet0/0
+ frequency 10
+end
+conf t
+
+ip sla schedule 1 life forever start-time now
+no ip sla 2
+ip sla 2
+ icmp-echo 20.177.0.15 source-interface Ethernet0/1
+ frequency 10
+
+end
+wr
+```
 
 R28:
 
@@ -644,225 +1096,177 @@ R28:
 en
 conf t
 
-interface tu 1110
-ip addr 10.255.151.20 255.255.255.0
-tunnel source 20.255.255.26
-tunnel destination 20.255.255.17
-ip mtu 1400
-ip tcp adjust-mss 1360
-ip nhrp network-id 1110
-ip nhrp map multicast 20.255.255.17
+no ip access-list extended SUBNET-EVEN
+ip access-list extended SUBNET-EVEN
+deny ip any 10.0.0.0 0.255.255.255
+deny ip any 255.255.255.255 0.0.0.0
+deny ip any 0.0.0.0 0.0.0.0
+deny ip 255.255.255.255 0.0.0.0 any
+deny ip 0.0.0.0 0.0.0.0 any
+permit ip 0.0.254.0 255.255.254.255 any
 
-
-ip nhrp nhs 10.255.151.1
-ip nhrp map 10.255.151.1 20.255.255.17
-
-exit
-
-router eigrp NG
-address-family ipv4 unicast autonomous-system 1
-af-interface default
-passive-interface
-exit-af-interface
-
-af-interface tu1110
-no passive-interface
-summary-address 10.14.0.0/16
-exit-af-interface
-
-network 10.255.151.0 0.0.0.255
-network 10.14.0.0 0.0.255.255
+no ip access-list extended SUBNET-ODD
+ip access-list extended SUBNET-ODD
+deny ip any 10.0.0.0 0.255.255.255
+deny ip any 255.255.255.255 0.0.0.0
+deny ip any 0.0.0.0 0.0.0.0
+deny ip 255.255.255.255 0.0.0.0 any
+deny ip 0.0.0.0 0.0.0.0 any
+permit ip 0.0.255.0 255.255.254.255 any
 
 end
 wr
 ```
 
-Результат:
+Связи все равно нет:
 
-![](screenshots/2021-06-26-19-00-35-image.png)
+![](screenshots/2021-07-03-22-55-02-image.png)
 
-R15 видит маршрут 10.89.0.0/16, 10.78.0.0/16. R28 получает маршруты 10.78.0.0/16, 10.177.0.0/16, но маршруты до 10.89.0.0/16 - нет. Split horizon. Исправляем на хабе:
+Пакеты уходят в Интернет, вместо туннелей, причем минуя NAT. Пакет до белых адресов транслируются.
+
+Также транслируются любые пакеты до сетей, которые неизвестны R28:
+
+![](screenshots/2021-07-03-23-54-58-image.png)
+
+???
+
+Неправильная трактовка - Wireshark показывает адреса, подсматривая их в GRE:
+
+![](screenshots/2021-07-04-11-44-51-image.png)
+
+Будем предполагать, что причина в отсутвии IPSec.
+
+???Также остается ситуация, когда имеем два маршрута из R28 к R27 - один напрямую, второй через R15:
+
+![](screenshots/2021-07-04-11-46-51-image.png)
+
+Как это лучше исправить??? Фазой 3?
+
+Из-за GRE проявляются проблемы, поэтому связность между рядом устройств будет отсутствовать. Задачу стоит перенести на следующую работу, где за счет IPSec проблема уйдет.
+
+### Включение фазы 3
+
+Фаза 3 позволит обменитваться спокам между собой только неоходимыми маршутами Фаза включается парой команд.
+
+Хаб R14:
+
+```
+en
+conf t
+int tu 14
+ip nhrp redirect
+
+int tu 114
+ip nhrp redirect
+end
+wr
+```
+
+Хаб R15:
+
+```
+en
+conf t
+int tu 15
+ip nhrp redirect
+
+int tu 115
+ip nhrp redirect
+end
+wr
+```
+
+Спок R27:
+
+```
+en
+conf t
+int tu14
+ip nhrp shortcut
+
+int tu15
+ip nhrp shortcut
+
+
+end
+wr
+```
+
+Спок R28:
+
+```
+en
+conf t
+
+int tu14
+ip nhrp shortcut
+
+int tu15
+ip nhrp shortcut
+
+int tu114
+ip nhrp shortcut
+
+int tu115
+ip nhrp shortcut
+
+
+end
+wr
+```
+
+Также на хабах задаем суммированный маршрут:
+
+R14:
+
+```
+en
+conf t
+router eigrp NG
+address-family ipv4 unicast autonomous-system 1
+af-interface tu14
+summary-address 10.0.0.0 255.0.0.0
+exit-af-interface
+
+
+af-interface tu114
+summary-address 10.0.0.0 255.0.0.0
+exit-af-interface
+
+
+end
+wr
+```
 
 R15:
 
 ```
 en
 conf t
-
 router eigrp NG
 address-family ipv4 unicast autonomous-system 1
-af-interface Tunnel1110
-no next-hop-self
-no split-horizon
-
-end
-wr
-```
-
-Результат:
-
-![](screenshots/2021-06-26-20-12-54-image.png)
-
-Бранчи знают маршруты друг до друга, причем хопом является не хаб, а маршрутизатор спока.
-
-При этом:
-
-![](screenshots/2021-06-26-23-11-31-image.png)
-
-![](screenshots/2021-06-26-23-14-16-image.png)
-
-Маршрут через спок, но трассировка всегда идет через хаб. Забыли на хабах указать tunnel mode gre multipoint.
-
-Исправляем. R27, R28. Обязательно убираем destination!!! Обязательно настраиваем на всем маршрутизаторах, иначе уйти пакет уйдет, но обратно не вернется:
-
-```
-en
-conf t
-int tu 1110
-no tunnel destination 20.255.255.17
-tunnel mode gre multipoint
-end
-wr
-```
-
-После этого все заработало, как требуется:
-
-![](screenshots/2021-06-26-23-32-16-image.png)
-
-![](screenshots/2021-06-26-23-33-54-image.png)
-
-![](screenshots/2021-06-26-23-32-32-image.png)
-
-Можно ли на хабе просуммировать маршуты? Это возможно только в фазе 3, или во второй тоже сработает? Проверим. 
-
-До суммаризации:
-
-![](screenshots/2021-06-26-23-40-39-image.png)
-
-Видим, что пакет идет напрямую, маршрут есть сразу до спока, установлен туннель.
-
-Суммаризируем на R15:
-
-```
-en
-conf t
-router eigrp NG
-address-family ipv4 unicast autonomous-system 1
-af-interface tu 1110
-summary-address 10.0.0.0/8
-end
-```
-
-![](screenshots/2021-06-26-23-42-58-image.png)
-
-Туннели и кэши как бы пока есть, но маршрут суммаризирован. Но есть несуммаризированный маршрут до сети хаба!!!
-
-Вывод - хаб получает маршруты и суммаризирует их, но не может перестать ставить свой хоп, т.к. маршрут получен один, значит и хоп будет один на весь суммарный префикс. Но также хаб добавляет свой специфический маршут, что странно.
-
-Убираем суммаризацию на R15:
-
-```
-en
-conf t
-router eigrp NG
-address-family ipv4 unicast autonomous-system 1
-af-interface tu 1110
-no summary-address 10.0.0.0/8
-end
-```
-
----
-
-Далее поднимаем туннель на втором физическом интрефейсе на R28.  Пробуем использовать тот же туннель, что и раньше, но задав новый туннельный адрес и новый source.
-
-R28:
-
-```
-en
-conf t
-
-interface tu 1110
-ip addr 10.255.151.21 255.255.255.0
-tunnel source 20.255.255.22
-ip mtu 1400
-ip tcp adjust-mss 1360
-ip nhrp network-id 1110
-ip nhrp map multicast 20.255.255.17
-
-
-ip nhrp nhs 10.255.151.1
-ip nhrp map 10.255.151.1 20.255.255.17
-
-exit
-
-end
-```
-
-Проблемы:
-
-![](screenshots/2021-06-27-00-01-16-image.png)
-
-Соседство на R15 с R28 появляется, но не с двумя интерфейсами. Соcедства на R28 с R15 вообще нет. Причина в виртуализации????
-
-Пробуем другой вариант - создать отдельный туннель. Сейчас соседство EIGRP с R27 и R28 установлено через туннель 1110:
-
-![](screenshots/2021-06-27-11-29-00-image.png)
-
-R15:
-
-```
-en
-conf t
-interface tu 1120
-tunnel mode gre multipoint
-ip addr 10.255.152.1 255.255.255.0
-tunnel source 20.255.255.17
-ip mtu 1400
-ip tcp adjust-mss 1360
-
-ip nhrp network-id 1120
-ip nhrp map multicast dynamic
-
-exit
-
-router eigrp NG
-address-family ipv4 unicast autonomous-system 1
-af-interface tu1120
-no passive-interface
-summary-address 10.177.0.0/16
+af-interface tu15
+summary-address 10.0.0.0 255.0.0.0
 exit-af-interface
 
 
-network 10.255.152.0 0.0.0.255
+af-interface tu115
+summary-address 10.0.0.0 255.0.0.0
+exit-af-interface
+
 
 end
 wr
 ```
 
-После появления нового туннеля на хабе R15 на том же физическом интерфейсе сразу пропало соседство EIGRP:
+Смотрим маршруты на споке:
 
-![](screenshots/2021-06-27-11-31-20-image.png)
+![](screenshots/2021-07-04-14-17-14-image.png)
 
-??? Как лучше поступить в этом случае??? Похоже, от идеи соединить спок (два физических интерфейс)  и хаб (один физический интерфейс) придется отказаться. На одном физическом интерфейсе хаба может быть только один туннель DMVPN.
+Суммарный маршрут от хаба получен, но есть еще и отдельный до сети хаба.
 
----
+Выполним проверку связи до R27 и снова проверим маршруты:
 
-Попробуем реализовать другой вариант туннелей. Есть два рекомендуемых варианта с двумя хабами:
+![](screenshots/2021-07-04-18-10-20-image.png)
 
-![](screenshots/2021-06-27-13-50-52-image.png)
-
-
-
-Применительно к нашей схеме:
-
-![](screenshots/2021-06-27-13-51-57-image.png)
-
-Здесь от каждого спока с одного интерфейса поднимается один и тот же туннель до каждого хаба. Что делать с E0/0 R28, можно ли с него поднять такой же туннель?
-
----
-
-
-
-![](screenshots/2021-06-27-13-54-46-image.png)
-
-Наиболее часто используемый вариант. Но для полной отказоустойчивости необходимо, чтобы каждый спок имел такое же количество интрефейсов, что и количество хабов. Если интерфейсов меньше, то не ко всем хабам удастся подключить спок. И про выходе из строя части хабов этот спок окажется не подключенным к VPN. Для данной схемы - если выйдет из строя или пропадет связь до R15, то спок R27 потеряет туннель.
+Маршрут не появился. Возможно, тоже из-за чистого GRE????
