@@ -1,0 +1,210 @@
+
+!
+! Last configuration change at 16:55:14 MSK Mon Jul 5 2021
+!
+version 15.4
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname R27
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+clock timezone MSK 3 0
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+!
+!
+!
+
+
+!
+ip dhcp excluded-address 10.89.0.1
+!
+ip dhcp pool DHCP-POOL
+ network 10.89.0.0 255.255.255.0
+ default-router 10.89.0.1 
+!
+!
+!
+no ip domain lookup
+ip cef
+ipv6 unicast-routing
+ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+redundancy
+!
+!
+! 
+!
+!
+!
+!
+crypto isakmp policy 10
+ authentication pre-share
+crypto isakmp key otus address 20.177.0.14    
+crypto isakmp key otus address 20.177.0.15    
+!
+!
+crypto ipsec transform-set ENC_ALG ah-sha512-hmac 
+ mode transport
+!
+crypto ipsec profile OTUS
+ set transform-set ENC_ALG 
+!
+!
+!
+!
+!
+!
+!
+interface Tunnel14
+ no shutdown
+ ip address 10.255.14.27 255.255.255.0
+ no ip redirects
+ ip mtu 1400
+ ip nhrp map multicast 20.177.0.14
+ ip nhrp map 10.255.14.14 20.177.0.14
+ ip nhrp network-id 14
+ ip nhrp nhs 10.255.14.14
+ ip tcp adjust-mss 1360
+ tunnel source Ethernet0/0
+ tunnel mode gre multipoint
+ tunnel protection ipsec profile OTUS
+!
+interface Tunnel15
+ no shutdown
+ ip address 10.255.15.27 255.255.255.0
+ no ip redirects
+ ip mtu 1400
+ ip nhrp map multicast 20.177.0.15
+ ip nhrp map 10.255.15.15 20.177.0.15
+ ip nhrp network-id 15
+ ip nhrp nhs 10.255.15.15
+ ip tcp adjust-mss 1360
+ tunnel source Ethernet0/0
+ tunnel mode gre multipoint
+ tunnel protection ipsec profile OTUS
+!
+interface Tunnel114
+ no shutdown
+ no ip address
+ shutdown
+!
+interface Ethernet0/0
+ no shutdown
+ ip address 20.255.255.6 255.255.255.252
+ ipv6 address FE80::2 link-local
+ ipv6 address 2001:DB8:255:255:4::6/80
+!
+interface Ethernet0/1
+ no shutdown
+ ip address 10.89.0.1 255.255.255.0
+!
+interface Ethernet0/2
+ no shutdown
+ no ip address
+ shutdown
+!
+interface Ethernet0/3
+ no shutdown
+ no ip address
+ shutdown
+!
+interface Ethernet1/0
+ no shutdown
+ no ip address
+ shutdown
+!
+interface Ethernet1/1
+ no shutdown
+ no ip address
+ shutdown
+!
+interface Ethernet1/2
+ no shutdown
+ no ip address
+ shutdown
+!
+interface Ethernet1/3
+ no shutdown
+ no ip address
+ shutdown
+!
+!
+router eigrp NG
+ !
+ address-family ipv4 unicast autonomous-system 1
+  !
+  af-interface default
+   passive-interface
+  exit-af-interface
+  !
+  af-interface Tunnel14
+   summary-address 10.89.0.0 255.255.0.0
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface Tunnel15
+   summary-address 10.89.0.0 255.255.0.0
+   no passive-interface
+  exit-af-interface
+  !
+  topology base
+  exit-af-topology
+  network 10.89.0.0 0.0.255.255
+  network 10.255.14.0 0.0.0.255
+  network 10.255.15.0 0.0.0.255
+ exit-address-family
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+ip route 0.0.0.0 0.0.0.0 20.255.255.5
+!
+ipv6 route ::/0 2001:DB8:255:255:4::5
+!
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+!
+end

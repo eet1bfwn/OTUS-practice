@@ -1,0 +1,243 @@
+
+!
+version 15.4
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+!
+hostname R18
+!
+boot-start-marker
+boot-end-marker
+!
+!
+!
+no aaa new-model
+clock timezone EET 2 0
+mmi polling-interval 60
+no mmi auto-configure
+no mmi pvc
+mmi snmp-timeout 180
+!
+!
+!
+!
+!
+!
+!
+!
+
+
+!
+!
+!
+!
+no ip domain lookup
+ip cef
+ipv6 unicast-routing
+ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+!
+!
+!
+redundancy
+!
+!
+! 
+!
+!
+!
+!
+crypto isakmp policy 10
+ authentication pre-share
+crypto isakmp key otus address 20.177.0.14    
+crypto isakmp key otus address 20.177.0.15    
+!
+!
+crypto ipsec transform-set ENC_ALG ah-sha512-hmac 
+ mode transport
+!
+crypto ipsec profile OTUS
+ set transform-set ENC_ALG 
+!
+!
+!
+!
+!
+!
+!
+interface Loopback18
+ no shutdown
+ ip address 20.78.0.18 255.255.255.255
+!
+interface Tunnel1418
+ no shutdown
+ ip address 10.255.255.3 255.255.255.254
+ ip mtu 1400
+ ip tcp adjust-mss 1360
+ tunnel source 20.78.0.18
+ tunnel destination 20.177.0.14
+ tunnel protection ipsec profile OTUS
+!
+interface Tunnel1518
+ no shutdown
+ ip address 10.255.255.1 255.255.255.254
+ ip mtu 1400
+ ip tcp adjust-mss 1360
+ tunnel source 20.78.0.18
+ tunnel destination 20.177.0.15
+ tunnel protection ipsec profile OTUS
+!
+interface Ethernet0/0
+ no shutdown
+ ip address 10.78.255.5 255.255.255.252
+ ip nat inside
+ ip virtual-reassembly in
+ ipv6 address 2001:DB8:78:255:4::5/80
+!
+interface Ethernet0/1
+ no shutdown
+ ip address 10.78.255.2 255.255.255.252
+ ip nat inside
+ ip virtual-reassembly in
+ ipv6 address 2001:DB8:78:255::2/80
+!
+interface Ethernet0/2
+ no shutdown
+ ip address 20.255.255.30 255.255.255.252
+ ip nat outside
+ ip virtual-reassembly in
+ ipv6 address 2001:DB8:255:255:28::30/80
+!
+interface Ethernet0/3
+ no shutdown
+ ip address 20.255.255.34 255.255.255.252
+ ip nat outside
+ ip virtual-reassembly in
+ ipv6 address 2001:DB8:255:255:32::34/80
+!
+!
+router eigrp NG
+ !
+ address-family ipv4 unicast autonomous-system 1
+  !
+  af-interface default
+   passive-interface
+  exit-af-interface
+  !
+  af-interface Ethernet0/0
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface Ethernet0/1
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface Tunnel1518
+   summary-address 10.78.0.0 255.255.0.0
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface Tunnel1418
+   summary-address 10.78.0.0 255.255.0.0
+   no passive-interface
+  exit-af-interface
+  !
+  topology base
+  exit-af-topology
+  network 10.78.255.0 0.0.0.3
+  network 10.78.255.4 0.0.0.3
+  network 10.255.255.0 0.0.0.1
+  network 10.255.255.2 0.0.0.1
+  eigrp router-id 1.0.0.18
+ exit-address-family
+ !
+ address-family ipv6 unicast autonomous-system 1
+  !
+  af-interface default
+   passive-interface
+  exit-af-interface
+  !
+  af-interface Ethernet0/0
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface Ethernet0/1
+   no passive-interface
+  exit-af-interface
+  !
+  topology base
+  exit-af-topology
+  eigrp router-id 1.0.0.18
+ exit-address-family
+!
+router bgp 2042
+ bgp log-neighbor-changes
+ neighbor 20.255.255.29 remote-as 520
+ neighbor 20.255.255.33 remote-as 520
+ neighbor 2001:DB8:255:255:28::29 remote-as 520
+ neighbor 2001:DB8:255:255:32::33 remote-as 520
+ !
+ address-family ipv4
+  network 20.78.0.0 mask 255.255.0.0
+  network 20.78.0.0 mask 255.255.255.0
+  neighbor 20.255.255.29 activate
+  neighbor 20.255.255.33 activate
+  no neighbor 2001:DB8:255:255:28::29 activate
+  no neighbor 2001:DB8:255:255:32::33 activate
+  maximum-paths 2
+ exit-address-family
+ !
+ address-family ipv6
+  maximum-paths 2
+  network 2001:DB8:78:255::/80
+  network 2001:DB8:78:255:4::/80
+  network 2001:DB8:255:255:28::/80
+  network 2001:DB8:255:255:32::/80
+  aggregate-address 2001:DB8:78::/48 summary-only
+  neighbor 2001:DB8:255:255:28::29 activate
+  neighbor 2001:DB8:255:255:32::33 activate
+ exit-address-family
+!
+ip forward-protocol nd
+!
+!
+no ip http server
+no ip http secure-server
+ip nat pool POOL_NAT_OUT 20.78.0.11 20.78.0.15 netmask 255.255.255.0
+ip nat inside source list ACL_NAT pool POOL_NAT_OUT overload
+ip route 0.0.0.0 0.0.0.0 Null0
+ip route 20.78.0.0 255.255.255.0 Null0
+!
+ip access-list extended ACL_NAT
+ permit ip 10.78.0.0 0.0.255.255 any
+!
+ipv6 route ::/0 Null0
+!
+!
+!
+control-plane
+!
+!
+!
+!
+!
+!
+!
+!
+line con 0
+ logging synchronous
+line aux 0
+line vty 0 4
+ login
+ transport input none
+!
+!
+end
