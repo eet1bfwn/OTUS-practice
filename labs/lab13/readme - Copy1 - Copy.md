@@ -34,7 +34,7 @@
 
 ### Настройка Loopback
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-16-21-45-image.png)
+![](screenshots/2021-07-03-16-21-45-image.png)
 
 В Москве на R14 создадим Lo14, на R15 Lo15; в СПб на R18 создадим на R18 Lo18. Выполним их анонсы в BGP.
 
@@ -88,7 +88,7 @@ wr
 
 NAT продолжает работать при конфигурации NAT с Loopback:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-16-30-11-image.png)
+![](screenshots/2021-07-03-16-30-11-image.png)
 
 R18 (для разнообразия сделаем анонс не одного Loopback, а целой подсети 20.78.0.0/16):
 
@@ -112,7 +112,7 @@ wr
 
 ### Адресация
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-16-44-52-image.png)
+![](screenshots/2021-07-03-16-44-52-image.png)
 
 Для адресов туннельных интерфейсов будем использовать сеть 10.255.0.0/16. 
 
@@ -183,7 +183,7 @@ wr
 
 Туннели поднялись, связь между маршрутизаторами через туннели есть:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-16-51-56-image.png)
+![](screenshots/2021-07-03-16-51-56-image.png)
 
 надо ли указывать tunnel mode gre????
 
@@ -298,7 +298,7 @@ wr
 
 На короткий момент появилось соседство, но потом пропало. Плюс туннели переходят в down:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-16-55-13-image.png)
+![](screenshots/2021-07-03-16-55-13-image.png)
 
 Это происходит из-за анонса белого адреса туннеля маршрутизатором R18. С прошлых лабораторных работ этот анонс был незамечен, да и вообще не нужен. Отключаем.
 
@@ -318,11 +318,11 @@ wr
 
 Туннели поднялись, соседство установилось:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-16-56-44-image.png)
+![](screenshots/2021-07-03-16-56-44-image.png)
 
 Но на R15 проблема продолжается:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-17-06-05-image.png)
+![](screenshots/2021-07-03-17-06-05-image.png)
 
 На R15 анонсируется маршрут до сети 20.78.0.0/16. Это сеть, которая анонсируется с R18 путем добавления статического маршрута. В EIGRP была задана команда редистрибуции статики, что тоже нужно убрать. 
 
@@ -349,7 +349,7 @@ wr
 
 Пришли маршруты, которые нужны:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-17-08-17-image.png)
+![](screenshots/2021-07-03-17-08-17-image.png)
 
 Лучше их суммаризировать на R18.
 
@@ -403,7 +403,7 @@ wr
 
 Получили суммарные маршруты на R14, R15, R18:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-17-14-27-image.png)
+![](screenshots/2021-07-03-17-14-27-image.png)
 
 R14 и R15 находятся в одной автономной системе и географически расположены в Москве. Однако они знают, что могут добраться до своих туннельных интерфейсов через соседа R18 в СПб. Это не оптимально, поэтому на R14-15 настроим соседство EIGRP. ??? Можно было бы настроить и через OSPF, но AD EIGRP перебьет такие маршруты и связь все равно будет через СПб.???
 
@@ -435,7 +435,7 @@ wr
 
 Результат:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-17-20-49-image.png)
+![](screenshots/2021-07-03-17-20-49-image.png)
 
 Маршруты суммаризируем для уменьшения количества записей.
 
@@ -460,11 +460,11 @@ wr
 
 Результат - суммаризированные маршруты:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-17-25-01-image.png)
+![](screenshots/2021-07-03-17-25-01-image.png)
 
 Но связи между компьютерами нет:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-17-28-41-image.png)
+![](screenshots/2021-07-03-17-28-41-image.png)
 
 Видим, что вероятно проблема в СПб - маршрутизатор получает пакет, но не пожет доставить до PC8.
 
@@ -561,7 +561,7 @@ wr
 
 Добавим в Лабытнангах хост, чтобы выполнять проверку связи через поднятые туннели, NAT настраивать не будем:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-17-36-26-image.png)
+![](screenshots/2021-07-03-17-36-26-image.png)
 
 R27:
 
@@ -605,7 +605,7 @@ wr
 
 Исходя из ограничений, реализуем следующие туннели:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-18-14-31-image.png)
+![](screenshots/2021-07-03-18-14-31-image.png)
 
 До R27 поднимем DMVPN на уже использующихся Loopback. Это будут туннели Tunnel 14 и Tunnel 15. К этим же туннелям подключим туннель с e0/1 R28. Второй интерфейс R28 e0/0 к этим туннелям уже не подключить, поэтому создадим еще два туннеля Tunnel 114, Tunnel 115. Для них придется завести еще Loopback-интерфейсы на хабах.
 
@@ -765,7 +765,7 @@ wr
 
 Связь до противоположных концов туннелей есть:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-18-42-06-image.png)
+![](screenshots/2021-07-03-18-42-06-image.png)
 
 Переходим к настройке R28. R28:
 
@@ -827,7 +827,7 @@ wr
 
 Связь есть:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-18-46-46-image.png)
+![](screenshots/2021-07-03-18-46-46-image.png)
 
 ### Настройка динамической маршрутизации
 
@@ -911,7 +911,7 @@ end
 wr
 ```
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-18-59-40-image.png)
+![](screenshots/2021-07-03-18-59-40-image.png)
 
 Соседство поднялось. ????Но через Tunnel не приходят hello от R14. Почему-то эти пакеты относятся к Tunnel 15 и дропаются. При включенни IPSec все поправится.
 
@@ -955,7 +955,7 @@ wr
 
 R28 получает не все маршруты:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-19-31-56-image.png)
+![](screenshots/2021-07-03-19-31-56-image.png)
 
 Нет маршрутов, которые должны приходит от соседей по DMVPN - через интерфейс Tunnel 15. Нужно на хабе отключить split-horizon, заодно убрать установку на хабе себя в качестве следующего хопа.
 
@@ -984,7 +984,7 @@ wr
 
 Спокам начали приходить все маршруты:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-19-36-36-image.png)
+![](screenshots/2021-07-03-19-36-36-image.png)
 
 Причем все же часть маршрутов идет через хаб. ??? Причина - маршрут идет напрямую, только если спок находится в той же сети. Если в другой - то маршрут идет через хаб.
 
@@ -1033,7 +1033,7 @@ R15 видит соседа, R27 - нет. Вывод - по туннелю от
 
 ### Проверка связи конечных узлов
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-19-48-18-image.png)
+![](screenshots/2021-07-03-19-48-18-image.png)
 
 Причина в R14. На нем отключены временно туннели Tunnel 14, 114, чтобы не флудить ошибками соседтсва на споках. Отключим R14 полностью. При настройке IPSec эта ошибка пропадет и мы сможем включить R14 обратно. Также гасим на R27 и R28 туннели Tunnel 14, 114.
 
@@ -1106,13 +1106,13 @@ wr
 
 Связи все равно нет:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-22-55-02-image.png)
+![](screenshots/2021-07-03-22-55-02-image.png)
 
 Пакеты уходят в Интернет, вместо туннелей, причем минуя NAT. Пакет до белых адресов транслируются.
 
 Также транслируются любые пакеты до сетей, которые неизвестны R28:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-03-23-54-58-image.png)
+![](screenshots/2021-07-03-23-54-58-image.png)
 
 ???
 
@@ -1120,7 +1120,7 @@ wr
 
 Неправильная трактовка - Wireshark показывает адреса, подсматривая их в GRE:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-04-11-44-51-image.png)
+![](screenshots/2021-07-04-11-44-51-image.png)
 
 
 
@@ -1130,7 +1130,7 @@ wr
 
 ???Также остается ситуация, когда имеем два маршрута из R28 к R27 - один напрямую, второй через R15:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-04-11-46-51-image.png)
+![](screenshots/2021-07-04-11-46-51-image.png)
 
 Как это лучше исправить??? Фазой 3?
 
@@ -1273,7 +1273,7 @@ wr
 
 Смотрим маршруты на споке:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-04-14-17-14-image.png)
+![](screenshots/2021-07-04-14-17-14-image.png)
 
 
 
@@ -1281,6 +1281,6 @@ wr
 
 Выполним проверку связи до R27 и снова проверим маршруты:
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab13\screenshots\2021-07-04-18-10-20-image.png)
+![](screenshots/2021-07-04-18-10-20-image.png)
 
 Маршрут не появился. Возможно, тоже из-за чистого GRE????
