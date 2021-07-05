@@ -467,8 +467,8 @@ wr
 
 ### <a name="head03"></a>Все узлы в офисах в лабораторной работе должны иметь IP связность
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab14\screenshots\2021-07-05-16-59-52-image.png)
+![](screenshots/2021-07-05-16-59-52-image.png)
 
-![](C:\Users\lda2\Documents\Network%20Engineer\OTUS-practice\labs\lab14\screenshots\2021-07-05-17-02-33-image.png)
+![](screenshots/2021-07-05-17-02-33-image.png)
 
 Связь конечных хостов между собой проверена.
