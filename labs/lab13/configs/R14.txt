@@ -1,5 +1,7 @@
 
 !
+! Last configuration change at 00:19:58 EET Wed Jul 7 2021
+!
 version 15.4
 service timestamps debug datetime msec
 service timestamps log datetime msec
@@ -74,10 +76,6 @@ interface Loopback14
  no shutdown
  ip address 20.177.0.14 255.255.255.255
 !
-interface Loopback114
- no shutdown
- ip address 20.177.1.14 255.255.255.255
-!
 interface Tunnel14
  no shutdown
  ip address 10.255.14.14 255.255.255.0
@@ -87,28 +85,16 @@ interface Tunnel14
  ip nhrp network-id 14
  ip nhrp redirect
  ip tcp adjust-mss 1360
- shutdown
  tunnel source Loopback14
  tunnel mode gre multipoint
-!
-interface Tunnel114
- no shutdown
- ip address 10.255.114.14 255.255.255.0
- no ip redirects
- ip mtu 1400
- ip nhrp map multicast dynamic
- ip nhrp network-id 114
- ip nhrp redirect
- ip tcp adjust-mss 1360
- shutdown
- tunnel source Loopback114
- tunnel mode gre multipoint
+ tunnel key 14
 !
 interface Tunnel1418
  no shutdown
  ip address 10.255.255.2 255.255.255.254
  ip mtu 1400
  ip tcp adjust-mss 1360
+ keepalive 5 4
  tunnel source 20.177.0.14
  tunnel destination 20.78.0.18
 !
@@ -178,21 +164,12 @@ router eigrp NG
    no split-horizon
   exit-af-interface
   !
-  af-interface Tunnel114
-   summary-address 10.0.0.0 255.0.0.0
-   summary-address 10.177.0.0 255.255.0.0
-   no next-hop-self
-   no passive-interface
-   no split-horizon
-  exit-af-interface
-  !
   topology base
   exit-af-topology
   network 10.177.0.0 0.0.255.255
   network 10.177.255.0 0.0.0.7
   network 10.177.255.8 0.0.0.7
   network 10.255.14.0 0.0.0.255
-  network 10.255.114.0 0.0.0.255
   network 10.255.255.2 0.0.0.1
   eigrp router-id 1.0.0.14
  exit-address-family
@@ -211,7 +188,7 @@ router ospf 1
  area 101 stub no-summary
  passive-interface default
  no passive-interface Ethernet0/0
- no passive-interface Ethernet0/3
+ no passive-interface Ethernet0/1
  default-information originate
 !
 router bgp 1001
@@ -225,7 +202,6 @@ router bgp 1001
  !
  address-family ipv4
   network 20.177.0.14 mask 255.255.255.255
-  network 20.177.1.14 mask 255.255.255.255
   network 20.177.19.19 mask 255.255.255.255
   network 20.255.255.8 mask 255.255.255.252
   neighbor 10.177.254.15 activate

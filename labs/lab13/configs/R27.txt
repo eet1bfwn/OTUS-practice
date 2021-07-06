@@ -1,6 +1,6 @@
 
 !
-! Last configuration change at 16:30:41 MSK Mon Jul 5 2021
+! Last configuration change at 01:15:51 MSK Wed Jul 7 2021
 !
 version 15.4
 service timestamps debug datetime msec
@@ -81,9 +81,9 @@ interface Tunnel14
  ip nhrp nhs 10.255.14.14
  ip nhrp shortcut
  ip tcp adjust-mss 1360
- shutdown
  tunnel source Ethernet0/0
  tunnel mode gre multipoint
+ tunnel key 14
 !
 interface Tunnel15
  no shutdown
@@ -98,11 +98,7 @@ interface Tunnel15
  ip tcp adjust-mss 1360
  tunnel source Ethernet0/0
  tunnel mode gre multipoint
-!
-interface Tunnel114
- no shutdown
- no ip address
- shutdown
+ tunnel key 15
 !
 interface Ethernet0/0
  no shutdown

@@ -1,5 +1,7 @@
 
 !
+! Last configuration change at 21:57:50 EET Tue Jul 6 2021
+!
 version 15.4
 service timestamps debug datetime msec
 service timestamps log datetime msec
@@ -72,6 +74,7 @@ interface Tunnel1418
  ip address 10.255.255.3 255.255.255.254
  ip mtu 1400
  ip tcp adjust-mss 1360
+ keepalive 5 4
  tunnel source 20.78.0.18
  tunnel destination 20.177.0.14
 !
@@ -80,35 +83,28 @@ interface Tunnel1518
  ip address 10.255.255.1 255.255.255.254
  ip mtu 1400
  ip tcp adjust-mss 1360
+ keepalive 5 4
  tunnel source 20.78.0.18
  tunnel destination 20.177.0.15
 !
 interface Ethernet0/0
  no shutdown
  ip address 10.78.255.5 255.255.255.252
- ip nat inside
- ip virtual-reassembly in
  ipv6 address 2001:DB8:78:255:4::5/80
 !
 interface Ethernet0/1
  no shutdown
  ip address 10.78.255.2 255.255.255.252
- ip nat inside
- ip virtual-reassembly in
  ipv6 address 2001:DB8:78:255::2/80
 !
 interface Ethernet0/2
  no shutdown
  ip address 20.255.255.30 255.255.255.252
- ip nat outside
- ip virtual-reassembly in
  ipv6 address 2001:DB8:255:255:28::30/80
 !
 interface Ethernet0/3
  no shutdown
  ip address 20.255.255.34 255.255.255.252
- ip nat outside
- ip virtual-reassembly in
  ipv6 address 2001:DB8:255:255:32::34/80
 !
 !
@@ -199,13 +195,8 @@ ip forward-protocol nd
 !
 no ip http server
 no ip http secure-server
-ip nat pool POOL_NAT_OUT 20.78.0.11 20.78.0.15 netmask 255.255.255.0
-ip nat inside source list ACL_NAT pool POOL_NAT_OUT overload
 ip route 0.0.0.0 0.0.0.0 Null0
 ip route 20.78.0.0 255.255.255.0 Null0
-!
-ip access-list extended ACL_NAT
- permit ip 10.78.0.0 0.0.255.255 any
 !
 ipv6 route ::/0 Null0
 !

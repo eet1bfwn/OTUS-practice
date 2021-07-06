@@ -1,6 +1,6 @@
 
 !
-! Last configuration change at 16:23:47 MSK Mon Jul 5 2021
+! Last configuration change at 01:16:06 MSK Wed Jul 7 2021
 !
 version 15.4
 service timestamps debug datetime msec
@@ -83,11 +83,6 @@ track 2 ip sla 2 reachability
 !
 !
 !
-interface Tunnel11
- no shutdown
- no ip address
- shutdown
-!
 interface Tunnel14
  no shutdown
  ip address 10.255.14.28 255.255.255.0
@@ -99,9 +94,9 @@ interface Tunnel14
  ip nhrp nhs 10.255.14.14
  ip nhrp shortcut
  ip tcp adjust-mss 1360
- shutdown
  tunnel source Ethernet0/1
  tunnel mode gre multipoint
+ tunnel key 14
 !
 interface Tunnel15
  no shutdown
@@ -114,37 +109,9 @@ interface Tunnel15
  ip nhrp nhs 10.255.15.15
  ip nhrp shortcut
  ip tcp adjust-mss 1360
- tunnel source Ethernet0/1
- tunnel mode gre multipoint
-!
-interface Tunnel114
- no shutdown
- ip address 10.255.114.27 255.255.255.0
- no ip redirects
- ip mtu 1400
- ip nhrp map multicast 20.177.1.14
- ip nhrp map 10.255.114.14 20.177.1.14
- ip nhrp network-id 114
- ip nhrp nhs 10.255.114.14
- ip nhrp shortcut
- ip tcp adjust-mss 1360
- shutdown
  tunnel source Ethernet0/0
  tunnel mode gre multipoint
-!
-interface Tunnel115
- no shutdown
- ip address 10.255.115.27 255.255.255.0
- no ip redirects
- ip mtu 1400
- ip nhrp map multicast 20.177.1.15
- ip nhrp map 10.255.115.15 20.177.1.15
- ip nhrp network-id 115
- ip nhrp nhs 10.255.115.15
- ip nhrp shortcut
- ip tcp adjust-mss 1360
- tunnel source Ethernet0/0
- tunnel mode gre multipoint
+ tunnel key 15
 !
 interface Ethernet0/0
  no shutdown
@@ -246,23 +213,11 @@ router eigrp NG
    no passive-interface
   exit-af-interface
   !
-  af-interface Tunnel114
-   summary-address 10.14.0.0 255.255.0.0
-   no passive-interface
-  exit-af-interface
-  !
-  af-interface Tunnel115
-   summary-address 10.14.0.0 255.255.0.0
-   no passive-interface
-  exit-af-interface
-  !
   topology base
   exit-af-topology
   network 10.14.0.0 0.0.255.255
   network 10.255.14.0 0.0.0.255
   network 10.255.15.0 0.0.0.255
-  network 10.255.114.0 0.0.0.255
-  network 10.255.115.0 0.0.0.255
  exit-address-family
 !
 ip forward-protocol nd
@@ -274,11 +229,12 @@ ip nat inside source route-map NAT_ISP0 interface Ethernet0/0 overload
 ip nat inside source route-map NAT_ISP1 interface Ethernet0/1 overload
 ip route 0.0.0.0 0.0.0.0 20.255.255.25 name ISP0 track 1
 ip route 0.0.0.0 0.0.0.0 20.255.255.21 name ISP1 track 2
-ip route 0.0.0.0 0.0.0.0 20.255.255.21
-ip route 0.0.0.0 0.0.0.0 20.255.255.25
+ip route 0.0.0.0 0.0.0.0 Ethernet0/1 20.255.255.21
+ip route 0.0.0.0 0.0.0.0 Ethernet0/0 20.255.255.25
 !
-ip access-list extended NAT
- permit ip 10.14.0.0 0.0.255.255 any
+ip access-list standard NAT
+ permit 10.14.0.0 0.0.255.255
+!
 ip access-list extended SUBNET-EVEN
  deny   ip any 10.0.0.0 0.255.255.255
  permit ip 10.14.0.0 0.0.254.255 any
@@ -287,22 +243,15 @@ ip access-list extended SUBNET-ODD
  permit ip 10.14.1.0 0.0.254.255 any
 !
 ip sla 1
- icmp-echo 20.177.0.15 source-interface Ethernet0/0
+ icmp-echo 10.52.255.1 source-interface Ethernet0/0
  frequency 10
 ip sla schedule 1 life forever start-time now
 ip sla 2
- icmp-echo 20.177.0.15 source-interface Ethernet0/1
+ icmp-echo 10.52.255.1 source-interface Ethernet0/1
  frequency 10
-ipv6 route ::/0 Ethernet0/1 2001:DB8:255:255:20::21
+ip sla schedule 2 life forever start-time now
 ipv6 route ::/0 Ethernet0/0 2001:DB8:255:255:24::25
-!
-route-map ISP-BALANCING permit 10
- match ip address SUBNET-ODD
- set ip next-hop 20.255.255.25
-!
-route-map ISP-BALANCING permit 20
- match ip address SUBNET-EVEN
- set ip next-hop 20.255.255.25
+ipv6 route ::/0 Ethernet0/1 2001:DB8:255:255:20::21
 !
 route-map NAT_ISP0 permit 10
  match ip address NAT
