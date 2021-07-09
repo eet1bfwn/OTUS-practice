@@ -27,7 +27,8 @@
       2. [Базовая настройка сетевых устройств.](#realization_base_config)
       3. [Настройка коммутаторов доступа.](#realization_acess_config)
       4. [Настройка динамической маршрутизации.](#realization_dynamic_config)
-      5. [Настройка DHCP.](#realiztoin_dhcp_hq)
+      5. [Настройка DHCP.](#realization_dhcp_hq)
+      6. [Настройка NAT.](#realization_nat)
    2. [Настройка провайдерской сети.](#realization_providers)
       1. [Планирование адресного пространства.](#realization_prov_addr_plan)
       2. [Базовая настройка маршрутизаторов.](#realizatioin_isp_base_config)
@@ -36,6 +37,8 @@
    3. [Базовая настройка сети в дата-центре.](#realization_dc_base)
       1. [Планирование адресного пространства.](#realization_dc_addr_plan)
       2. [Базовая настройка устройств.](#)
+      3. [Настройка IGP-динамической маршрутизации](#)
+      4. [Настройка EGP-динамической маршрутизации](#)
    4. [Настройка BGP в центральном офисе и дата-центре.](#)
 
 # <a name="net_whole"></a>Общая схема сети
@@ -567,6 +570,8 @@ conf t
 no ip domain-lookup
 hostname Core-1
 
+ip route 0.0.0.0 0.0.0.0 Ethernet 0/1 201.0.0.0 
+
 int loopback 0
 ip addr 10.223.244.0 255.255.255.255
 
@@ -580,6 +585,10 @@ ip addr 10.223.248.0 255.255.255.254
 no shut
 
 
+int e0/1
+ip addr 201.0.0.1 255.255.255.254
+no shut
+
 end 
 wr
 ```
@@ -591,6 +600,10 @@ en
 conf t
 no ip domain-lookup
 hostname Core-2
+
+ip route 0.0.0.0 0.0.0.0 Ethernet 0/1 201.0.0.2 
+ip route 0.0.0.0 0.0.0.0 Ethernet 1/1 203.0.0.1 
+
 
 int loopback 0
 ip addr 10.223.244.1 255.255.255.255
@@ -604,6 +617,13 @@ int e0/0
 ip addr 10.223.248.1 255.255.255.254
 no shut
 
+int e0/1
+ip addr 201.0.0.3 255.255.255.254
+no shut
+
+int e1/1
+ip addr 203.0.0.0 255.255.255.254
+no shut
 
 end 
 wr
@@ -1047,6 +1067,44 @@ wr
 
 Маршруты приходят - и в ядро, и к стекам доступа. Маршруты все - до Loopback, до сетей линков, до сетей за стеками доступа.
 
+Настроим передачу default. На коммутаторах ядра default прописан вручную. Делаем анонс маршрута через EIGRP.
+
+Core-1:
+
+```
+en
+conf t
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+topology base
+redistribute static
+default-information out
+
+end
+wr
+```
+
+Core-2:
+
+```
+en
+conf t
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+topology base
+redistribute static
+default-information out
+
+end
+wr
+```
+
+Маршрут по умолчанию приходит:
+
+![](screenshots/2021-07-08-22-01-49-image.png)
+
+Core-1 получает и маршрут по умолчанию от Core-2 по EIGRP, также и наоборот Core-2 получает маршрут по умолчанию от Core-1. Но эти маршруты не попадают в таблицу маршрутизации, т.к. перебиваются статическими записями. 
+
 ------
 
 ### <a name="realiztoin_dhcp_hq"> Настройка DHCP
@@ -1304,6 +1362,704 @@ wr
 ![](screenshots/2021-06-29-01-33-00-image.png)
 
 Видим, что шлюзы остались прежними, адреса сместились в область, которая выдается другим DHCP-сервером.
+
+### <a name="realiztoin_dhcp_hq"> Настройка NAT
+
+![](screenshots/2021-07-09-09-28-49-image.png)
+
+NAT необходимо настроить на Core-1 и Core-2. На маршрутизаторах с двумя линками до провайдера для организации NAT требуется использовать Route Map. Для унификации настройки такой же способ настройки будем использовать и на маршрутизаторах с одним линком до провайдера.
+
+Отключим Core-2 на время настройки Core-1.
+
+Core01:
+
+```
+en
+conf t
+ip access-list standard ACL_NAT
+permit 10.0.0.0 0.255.255.255
+
+
+route-map RM_NAT_ISP1 permit 10
+match ip address ACL_NAT
+match interface e0/1
+exit
+
+
+int range e0/0, e0/2
+ip nat inside
+
+int e0/1
+ip nat outside
+
+
+ip nat inside source route-map RM_NAT_ISP1 interface e0/1 overload
+
+end
+wr
+```
+
+![](screenshots/2021-07-09-10-37-03-image.png)
+
+Связь до дата-центра есть.
+
+Аналогично выключаем Core-1, включаем Core-2 и выполняем его настройку.
+
+Core-2:
+
+```
+en
+conf t
+ip access-list standard ACL_NAT
+permit 10.0.0.0 0.255.255.255
+
+
+route-map RM_NAT_ISP1 permit 10
+match ip address ACL_NAT
+match interface e0/1
+exit
+
+route-map RM_NAT_ISP2 permit 10
+match ip address ACL_NAT
+match interface e1/1
+exit
+
+
+int range e0/0, e0/3
+ip nat inside
+
+int range e0/1, e1/1
+ip nat outside
+
+
+ip nat inside source route-map RM_NAT_ISP1 interface e0/1 overload
+ip nat inside source route-map RM_NAT_ISP2 interface e1/1 overload
+
+end
+wr
+```
+
+![](screenshots/2021-07-09-11-29-59-image.png)
+
+Связь с компьютеров центрального офиса до дата-центра есть. Причем работает балансировка - 4й хоп меняется.
+
+Включим оба пограничных маршрутизатора и проверим, как идут пакет от компьютеров в Интернет:
+
+![](screenshots/2021-07-09-11-32-29-image.png)
+
+![](screenshots/2021-07-09-11-33-14-image.png)
+
+Видим из третьего хопа, что отрабатывает балансировка на Distribution-Stack и пакет направляется либо к Core-1, либо к Core-2. Из 4го хопа видим, что пакет в зависимости от балансировки уходит по одному из трех провайдерских линков. Балансировка работает.
+
+### <a name="realization_base_config"> Реализация SLA
+
+При текущей настройке если падает линк провайдера, то маршрутизатор все равно видит линк и оставляет маршрут по умолчанию:
+
+![](screenshots/2021-07-09-11-41-17-image.png)
+
+Возможно, это особенность виртуализации. Но в любом случае, с линком может быть все в порядке, но проблемы со связью будут далее по маршруту. Поэтому нужно настроить SLA и icmp-запросы до узлов Интернета.
+
+
+
+Core-1 будет проверять доступность узлов R29 и DC-Core-1:
+
+![](screenshots/2021-07-09-12-12-27-image.png)
+
+Core-1:
+
+```
+en
+conf t
+ip sla 1
+ icmp-echo 201.0.0.6 source-interface Ethernet0/1
+ frequency 10
+ip sla schedule 1 life forever start-time now
+ip sla 2
+ icmp-echo 202.0.0.2 source-interface Ethernet0/1
+ frequency 10
+ip sla schedule 2 life forever start-time now
+
+track 1 ip sla 1 reachability
+track 2 ip sla 2 reachability
+track 3 list boolean or
+ object 1
+ object 2
+
+no ip route 0.0.0.0 0.0.0.0 Ethernet0/1 201.0.0.0
+ip route 0.0.0.0 0.0.0.0 Ethernet0/1 201.0.0.0 track 3
+
+
+end
+wr
+```
+
+
+
+Отключим R29:
+
+![](screenshots/2021-07-09-12-15-23-image.png)
+
+Результат отслеживания на Core-1:
+
+![](screenshots/2021-07-09-12-19-54-image.png)
+
+Один track в состоянии Down, но т.к. второй в состоянии Up, итоговый track в состоянии Up и статический маршрут занесен в таблицу маршрутизации.
+
+
+
+Гасим DC-Core-1:
+
+![](screenshots/2021-07-09-12-22-48-image.png)
+
+
+
+В результате все track в состоянии Down, маршрут удален из таблицы маршрутизации:
+
+![](screenshots/2021-07-09-12-22-36-image.png)
+
+
+
+При этом если включить Core-2, то Core-1 будет знать выход в Интернет. Но при этом соседи не выберут его дефолтом, т.к. есть более короткий путь через Core-2:
+
+ 
+
+![](screenshots/2021-07-09-12-25-47-image.png)
+
+
+
+Включаем R29 и DC-Core-1 - треки поднялись, сосед Distribution-Stack стал помещать в таблицу маршрутизации оба Core: 
+![](screenshots/2021-07-09-12-33-49-image.png)
+
+
+
+Аналогичным образом настроим Core-2. У него потребуется отслеживать четыре узла для проверки двух провайдерских линков:
+
+![](screenshots/2021-07-09-12-57-18-image.png)
+
+Core-2:
+
+```
+en
+conf t
+ip sla 1
+ icmp-echo 201.0.0.8 source-interface Ethernet0/1
+ frequency 10
+ip sla schedule 1 life forever start-time now
+
+ip sla 2
+ icmp-echo 201.0.0.7 source-interface Ethernet0/1
+ frequency 10
+ip sla schedule 2 life forever start-time now
+
+track 1 ip sla 1 reachability
+track 2 ip sla 2 reachability
+track 3 list boolean or
+ object 1
+ object 2
+
+
+ip sla 4
+ icmp-echo 202.0.0.2 source-interface Ethernet1/1
+ frequency 10
+ip sla schedule 4 life forever start-time now
+
+ip sla 5
+ icmp-echo 203.0.0.7 source-interface Ethernet1/1
+ frequency 10
+ip sla schedule 5 life forever start-time now
+
+track 4 ip sla 4 reachability
+track 5 ip sla 5 reachability
+track 6 list boolean or
+ object 4
+ object 5
+
+
+no ip route 0.0.0.0 0.0.0.0 Ethernet0/1 201.0.0.2
+ip route 0.0.0.0 0.0.0.0 Ethernet0/1 201.0.0.2 track 3
+
+no ip route 0.0.0.0 0.0.0.0 Ethernet1/1 203.0.0.1
+ip route 0.0.0.0 0.0.0.0 Ethernet1/1 203.0.0.1 track 6
+
+
+end
+wr
+```
+
+
+
+Гасим из 4 узлов три:
+
+![](screenshots/2021-07-09-12-50-21-image.png)
+
+В состоянии UP остался один Track 3:
+
+![](screenshots/2021-07-09-12-52-07-image.png)
+
+
+
+Остался один шлюз через E0/1:
+
+![](screenshots/2021-07-09-12-52-44-image.png)
+
+
+
+Distribution-Stack знает 2 пути по умолчанию:
+
+![](screenshots/2021-07-09-12-53-24-image.png)
+
+
+
+Гасим последний узел:
+
+![](screenshots/2021-07-09-13-07-12-image.png)
+
+
+
+На Core-2 все track в состоянии Down, маршрута по умолчанию нет:
+
+![](screenshots/2021-07-09-12-54-39-image.png)
+
+Core-1 должен сообщать маршрут по умолчанию. Этого не происходит, т.к. и Core-1 не может успешно получить пакеты от удаленных узлов. Мы пришли к ситуации, когда все маршруты по умолчанию в сторону Интернет оказались выброшены из таблицы маршрутизации. Как следствие, все track не могут перейти из состояния Down в Up, маршруты автоматически не вернутся в таблицу. Выходы из ситуации:
+
+1. Добавить еще один линк простой-дешевый, который никогда не будет удаляться через ip sla и имеющий AD 209. Была выполнена проверка на стенде, здесь подробности не приводятся для сокращения объема. Проблемы такого решения:
+   
+   1. При удалении основного маршрута останется резервный, через который пойдет весь трафик. Это не очень хорошо.
+   
+   2. Через резервный маршрут трек перейдет в состояни UP, появится основной маршрут в таблице маршрутизации. Но через основной маршрут тестовые узлы по-прежнему недоступны, маршрут будет выброшен снова.
+
+2. Оставить один из основных линков до провайдера без отслеживания. Чревато те, что трафик будет направляться в строну провайдера, у которого проблемы, и пропадать в черной дыре.
+
+3. Рассматривать ситуацию, когда все маршруты 0.0.0.0 будут выкинуты из таблицы маршрутизации, как крайне маловероятную. Малая вероятность достигается за счет большого количества тестовых узлов и также за счет их высокой доступности.
+
+4. Добавлять временно маршрут без трека, чтобы через него проверить связь до тестовых узлов и вернуть маршруты в таблицу маршрутизации. После этого удалить неотслеживаемый маршрут. Решение плохо, т.к. требует участия человека.
+
+
+
+Выполним третий вариант и уберем отслеживани одного из маршрутов. Core-2:
+
+```
+en
+conf t
+
+no track 4
+no track 5
+no track 6
+no ip sla 4
+no ip sla 5
+
+no ip route 0.0.0.0 0.0.0.0 Ethernet1/1 203.0.0.1 track 6
+ip route 0.0.0.0 0.0.0.0 Ethernet1/1 203.0.0.1
+
+end
+wr
+```
+
+Выключим узлы, до которых проверяется связь:
+
+![](screenshots/2021-07-09-14-05-26-image.png)
+
+![](screenshots/2021-07-09-14-08-06-image.png)
+
+
+
+Видим, что остался один маршрут в Интернет через Core-2. Этот маршрут передан соседям, у них сохранилась связь с Интернетом.
+
+
+
+
+
+Включим узлы, до которых проверяется связь:
+
+![](screenshots/2021-07-09-14-11-24-image.png)
+
+Вернулись все маршруты. Что и требовалось.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## <a name="realization_providers"></a>Настройка провайдерской сети
 
@@ -1804,9 +2560,11 @@ wr
 
 ### <a name="realization_dc_addr_plan"></a>Планирование адресного пространства
 
-- В дата-центре расположены серверы, к которым необходим доступ из сети Интернет.
-- Адреса принадлежат автономной системе.
-- Серверы Srv-Web-1 и Srv-Mail-1 расположены в разных подсетях.
+![](screenshots/2021-07-08-16-53-19-image.png)
+
+- В дата-центре расположены серверы, к которым необходим доступ из сети Интернет - Srv-Mail, Sev-Web.
+- В дата-центре расположены серверы, к которым необходим доступ только из внутренней сетей - Srv-File, Srv-Voice.
+- Белые адреса принадлежат автономной системе 9001, они представлены сетью 55.0.11.0/24.
 
 К серверам возможно реализовать два варианта доступа:
 
@@ -1815,4 +2573,378 @@ wr
   - Настраивать придется каждый пограничный маршрутизатор - и R14, и R15.
   - При обращении к серверу из серой сети пакет пойдет сперва на пограничный маршрутизатор, там произойдет трансляция адреса назначения, пакет направится к серверу.
     - Во-первых - получим скорее всего более длинный путь.
-    - Во-вторых - сервер ответит пакетом с адресом назначения в серой сети и пошлет пакет, минуя маршрутизатор, на котором была трансляция. Такой пакет может быть отброшен правилом на клиенте.
+    - Во-вторых - сервер ответит клиенту из внутренней сети пакетом с адресом назначения в серой сети и пошлет пакет, минуя маршрутизатор, на котором была трансляция. Такой пакет может быть отброшен правилом на клиенте. Решение - для клиентов из внутренней сети должен быть внутренний DNS-сервер, где прописаны внутренние адреса серверов.
+
+Будем реализовывать второй вариант  - статическую трансляцию.
+
+Для адресов основного офиса используется диапазон 10.192.0.0-10.255.255.255. Для адресации в дата-центре будем использовать диапазон 10.184.0.0-10.191.255.255. Это сеть 10.184.0.0/13. Из этого адресного пространства выделим следующие диапазоны:
+
+1. Адресация линков сетевых устройств: 10.191.128.0 - 10.191.255.255. Это сеть 10.191.128/17. При разбиении на сети /31 доступно 16384 сети.
+
+2. Loopback: 10.191.0.0 - 10.191.127.255. Это сеть 10.191.0/17. При разбиении на сети /32 доступно 32768 адресов.
+
+3. Адресация серверов 10.184.0.0-10.187.255.255. Это сеть 10.184.0.0/14.
+   
+   1. LAN  10.184.0.0-10.185.255.255. Это сеть 10.184.0.0/15. При разбиении на сети /30 доступно 32768 сети. В работе будем разбивать на сети по /24, будет доступно 512 сетей по 256 хостов.
+   
+   2. DMZ - 10.186.0.0-10.187.255.255. Это сеть 10.186.0.0/15. При разбиении на сети /30 доступно 32768 сети. В работе будем разбивать на сети по /24, будет доступно 512 сетей по 256 хостов.
+
+### 
+
+### <a name="realization_dc_conf_base"></a>Базовая настройка сетевых устройств
+
+Выполним базовую настройку сетевых устройств. 
+
+DC-Distr-1. Настроим адресацию, DHCP-сервер:
+
+```
+en
+conf t
+no ip domain-lookup
+no ip cef
+hostname DC-Distr-1
+ip routing
+
+int loopback 0
+ip addr 10.191.0.2 255.255.255.255
+
+int e0/0
+no switchport
+ip addr 10.191.128.4 255.255.255.254
+no shut
+
+int e0/2
+no switchport
+ip addr 10.191.128.2 255.255.255.254
+no shut
+
+int e0/1
+no switchport
+ip addr 10.186.1.1 255.255.255.0
+no shut
+
+int e0/3
+no switchport
+ip addr 10.186.0.1 255.255.255.0
+no shut
+
+int e1/0
+no switchport
+ip addr 10.184.0.1 255.255.255.0
+no shut
+
+int e1/1
+no switchport
+ip addr 10.184.1.1 255.255.255.0
+no shut
+
+exit
+
+
+ip dhcp excluded-address 10.186.0.1
+ip dhcp excluded-address 10.186.1.1
+ip dhcp excluded-address 10.184.0.1
+ip dhcp excluded-address 10.184.1.1
+
+ip dhcp pool Pool_Mail
+network 10.186.0.0 255.255.255.0
+default-router 10.186.0.1
+
+
+ip dhcp pool Pool_Web
+network 10.186.1.0 255.255.255.0
+default-router 10.186.1.1
+
+
+ip dhcp pool Pool_Voice
+network 10.184.0.0 255.255.255.0
+default-router 10.184.0.1
+
+
+ip dhcp pool Pool_File
+network 10.184.1.0 255.255.255.0
+default-router 10.184.1.1
+
+
+end
+wr
+```
+
+В реальности серверам лучше назначать статические адреса, для работы будем выдавать их по DHCP.
+
+DC-Core-1. Настроим адресацию:
+
+```int
+en
+conf t
+no ip domain-lookup
+hostname DC-Core-1
+ip routing
+
+int loopback 0
+ip addr 10.191.0.0 255.255.255.255
+
+int e0/0
+ip addr 202.0.0.2 255.255.255.254
+no shut
+
+
+
+int e0/1
+ip addr 10.191.128.0 255.255.255.254
+no shut
+
+int e0/2
+ip addr 10.191.128.3 255.255.255.254
+no shut
+
+end
+
+wr
+```
+
+DC-Core-2. Настроим адресацию:
+
+```int
+en
+conf t
+no ip domain-lookup
+hostname DC-Core-2
+ip routing
+
+int loopback 0
+ip addr 10.191.0.1 255.255.255.255
+
+int e0/2
+ip addr 201.0.0.8 255.255.255.254
+no shut
+
+
+
+int e0/1
+ip addr 10.191.128.1 255.255.255.254
+no shut
+
+int e0/0
+ip addr 10.191.128.5 255.255.255.254
+no shut
+
+end
+
+wr
+```
+
+### <a name="realization_dc_conf_dynamic"></a>Настройка IGP-динамической маршрутизации
+
+В качестве протокола динамической маршрутизации выбран EIGRP.
+
+DC-Distr-1:
+
+```
+en
+conf t
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+af-interface default
+passive-interface
+exit-af-interface
+
+
+af-interface e0/0
+no passive-interface
+exit-af-interface
+
+
+af-interface e0/2
+no passive-interface
+exit-af-interface
+
+
+network 10.191.0.2 0.0.0.0
+network 10.184.0.0 0.0.255.255
+network 10.186.0.0 0.0.255.255
+network 10.191.128.2 0.0.0.1
+network 10.191.128.4 0.0.0.1
+
+
+end
+wr
+```
+
+DC-Core-1:
+
+```
+en
+conf t
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+af-interface default
+passive-interface
+exit-af-interface
+
+
+af-interface e0/1
+no passive-interface
+exit-af-interface
+
+
+af-interface e0/2
+no passive-interface
+exit-af-interface
+
+
+network 10.191.0.0 0.0.0.0
+network 10.191.128.2 0.0.0.1
+network 10.191.128.0 0.0.0.1
+
+
+end
+wr
+```
+
+DC-Core-2:
+
+```
+en
+conf t
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+af-interface default
+passive-interface
+exit-af-interface
+
+
+af-interface e0/1
+no passive-interface
+exit-af-interface
+
+
+af-interface e0/0
+no passive-interface
+exit-af-interface
+
+
+network 10.191.0.1 0.0.0.0
+network 10.191.128.4 0.0.0.1
+network 10.191.128.0 0.0.0.1
+
+
+end
+wr
+```
+
+Маршруты приходят:
+
+![](screenshots/2021-07-08-16-58-29-image.png)
+
+Выполним на DC-Distr-1 суммаризацию маршрутов до серверов. Суммарная сеть 10.184.0.0/14.
+
+DC-Distr-1:
+
+```
+en
+conf t
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+af-interface default
+passive-interface
+exit-af-interface
+
+
+af-interface e0/0
+no passive-interface
+summary-address 10.184.0.0 255.252.0.0
+exit-af-interface
+
+
+af-interface e0/2
+no passive-interface
+summary-address 10.184.0.0 255.252.0.0
+
+end
+wr
+```
+
+Маршруты суммаризованы:
+
+![](screenshots/2021-07-08-20-33-04-image.png)
+
+### <a name="realization_dc_conf_dynamic"></a>Настройка EGP-динамической маршрутизации
+
+![](screenshots/2021-07-08-21-25-41-image.png)
+
+Динамическую маршрутизацию BGP настроим на DC-Core-1/2. Обязательно нужно настроить и iBGP, чтобы сосед по автономной системе знал маршрут выхода в Интернет в случае падения линка до своего провайдера.
+
+DC-Core-1:
+
+```
+en
+conf t
+ip route 54.0.11.0 255.255.255.0 Null0
+router bgp 9001
+neighbor 202.0.0.3 remote-as 2001
+neighbor 202.0.0.3 
+neighbor 10.191.0.1 remote-as 9001
+neighbor 10.191.0.1 update-source lo 0
+neighbor 10.191.0.1 next-hop-self
+
+
+network 54.0.11.0 mask 255.255.255.0
+network 202.0.0.2 mask 255.255.255.254
+
+
+end
+wr
+```
+
+DC-Core-2:
+
+```
+en
+conf t
+ip route 54.0.11.0 255.255.255.0 Null0
+router bgp 9001
+neighbor 201.0.0.9 remote-as 1001
+neighbor 201.0.0.9 update-source E0/2
+neighbor 10.191.0.0 remote-as 9001
+neighbor 10.191.0.0 update-source lo 0
+neighbor 10.191.0.0 next-hop-self
+
+
+network 54.0.11.0 mask 255.255.255.0
+network 201.0.0.8 mask 255.255.255.254
+
+end
+wr
+```
+
+R29:
+
+```
+en
+conf t
+router bgp 2001
+neighbor 202.0.0.2 remote-as 9001
+
+end
+wr
+```
+
+R8:
+
+```
+en
+conf t
+router bgp 1001
+neighbor 201.0.0.8 remote-as 9001
+neighbor 201.0.0.8
+
+end
+wr
+```
+
+Проверяем связь от дата-центра до центрального офиса:
+
+![](screenshots/2021-07-08-22-09-43-image.png)
+
+Связь есть.
