@@ -106,6 +106,508 @@
 
 # <a name="realization"></a>Реализация
 
+
+
+## <a name="realization_providers"></a>Настройка провайдерской сети
+
+### <a name="realization_prov_addr_plan"></a>Планирование адресного пространства
+
+![](screenshots/2021-06-14-12-22-07-image.png)
+
+- Для организации линков между маршрутизаторами одного провайдера используются сети, начиная с 10.0.0.0/31.
+- Для Loopback-интерфейсов - сети, начиная с 10.0.2.0/32.
+- Адреса интерфесов, которыми соединены разные автономные зоны и офисы, берутся из пула провайдера, имеют маску 31 бит.
+  - Пул ISP1 201.0.0.0/8
+  - Пул ISP2 202.0.0.0/8
+  - Пул ISP3 203.0.0.0/8  
+- Первый адрес из подсети /31 назначается вернему маршрутизатору, второй -нижнему.
+
+### <a name="realizatioin_isp_base_config"></a>Базовая настройка маршрутизаторов
+
+Выполним базовую настройку маршрутизаторов - зададим имя устройства и адреса интерфейсов, включим порты.
+
+**Начнем с ISP1.**
+
+R5:
+
+```
+en
+conf t
+hostname R5
+no ip domain-lookup
+int loopback 0
+ip addr 10.0.2.5 255.255.255.255
+
+
+int e0/0
+ip addr 10.0.0.5 255.255.255.254
+no shut
+
+int e0/1
+ip addr 201.0.0.2 255.255.255.254
+no shut
+
+int e0/2
+ip addr 201.0.0.4 255.255.255.254
+no shut
+
+int e0/3
+ip addr 10.0.0.3 255.255.255.254
+no shut
+
+end
+wr
+```
+
+R6:
+
+```
+en
+conf t
+hostname R6
+no ip domain-lookup
+int loopback 0
+ip addr 10.0.2.6 255.255.255.255
+
+
+int e0/0
+ip addr 10.0.0.4 255.255.255.254
+no shut
+
+int e0/1
+ip addr 201.0.0.0 255.255.255.254
+no shut
+
+int e0/2
+ip addr 10.0.0.0 255.255.255.254
+no shut
+
+
+end
+wr
+```
+
+R8:
+
+```
+en
+conf t
+hostname R8
+no ip domain-lookup
+int loopback 0
+ip addr 10.0.2.8 255.255.255.255
+
+
+int e0/0
+ip addr 10.0.0.2 255.255.255.254
+no shut
+
+
+int e0/1
+ip addr 10.0.0.1 255.255.255.254
+no shut
+
+int e0/2
+ip addr 201.0.0.9 255.255.255.254
+no shut
+
+int e0/3
+ip addr 201.0.0.7 255.255.255.254
+no shut
+
+end
+wr
+```
+
+**ISP2**
+
+R29:
+
+```
+en
+conf t
+hostname R29
+no ip domain-lookup
+int loopback 0
+ip addr 10.0.2.29 255.255.255.255
+
+
+int e0/0
+ip addr 201.0.0.6 255.255.255.254
+no shut
+
+int e0/1
+ip addr 203.0.0.6 255.255.255.254
+no shut
+
+int e0/2
+ip addr 202.0.0.3 255.255.255.254
+no shut
+
+int e0/3
+ip addr 202.0.0.0 255.255.255.254
+no shut
+
+
+end
+wr
+```
+
+**ISP3**
+
+R17:
+
+```
+en
+conf t
+hostname R17
+no ip domain-lookup
+int loopback 0
+ip addr 10.0.2.17 255.255.255.255
+
+
+int e0/0
+ip addr 201.0.0.5 255.255.255.254
+no shut
+
+int e0/1
+ip addr 203.0.0.2 255.255.255.254
+no shut
+
+int e0/2
+ip addr 203.0.0.1 255.255.255.254
+no shut
+
+int e0/3
+ip addr 10.0.0.0 255.255.255.254
+no shut
+
+
+end
+wr
+```
+
+R20:
+
+```
+en
+conf t
+hostname R20
+no ip domain-lookup
+int loopback 0
+ip addr 10.0.2.20 255.255.255.255
+
+
+int e0/0
+ip addr 203.0.0.4 255.255.255.254
+no shut
+
+
+int e0/1
+ip addr 10.0.0.1 255.255.255.254
+no shut
+
+int e0/3
+ip addr 203.0.0.7 255.255.255.254
+no shut
+
+
+
+end
+wr
+```
+
+### <a name="realization_isp_igp"></a>Настройка IGP
+
+В качестве протокола внутренней динамической маршрутизации выберем протокол IS-IS. Каждый маршрутизатор находится в своей зоне, взаимодействие только L2.
+
+**ISP1**
+
+R5:
+
+```
+en
+conf t
+router isis
+net 49.5555.0005.0005.0005.00
+is-type level-2-only
+exit
+int range e0/0,e0/3, loopback 0
+ip router isis
+end
+wr
+```
+
+R6:
+
+```
+en
+conf t
+router isis
+net 49.6666.0006.0006.0006.00
+is-type level-2-only
+exit
+int range e0/0,e0/2, loopback 0
+ip router isis
+end
+wr
+```
+
+R8:
+
+```
+en
+conf t
+router isis
+net 49.8888.0008.0008.0008.00
+is-type level-2-only
+exit
+int range e0/0,e0/1, loopback 0
+ip router isis
+end
+wr
+```
+
+Пример результата:
+
+![](screenshots/2021-06-14-13-05-28-image.png)
+
+Получены маршруты до внутренних сетей и лупбэков.
+
+**ISP3**
+
+R17:
+
+```
+en
+conf t
+router isis
+net 49.1717.1717.1717.1717.00
+is-type level-2-only
+exit
+int range e0/3, loopback 0
+ip router isis
+end
+wr
+```
+
+R20:
+
+```
+en
+conf t
+router isis
+net 49.2020.2020.2020.2020.00
+is-type level-2-only
+exit
+int range e0/1, loopback 0
+ip router isis
+end
+wr
+```
+
+Результат:
+
+![](screenshots/2021-06-14-13-09-32-image.png)
+
+Получен маршрут до loopback соседа.
+
+### <a name="realization_isp_bgp"></a>Настройка BGP
+
+Выполним настройку eBGP и iBGP в провайдерских сетях.
+
+**ISP1**
+
+R5:
+
+```
+en
+conf t
+
+router bgp 1001
+bgp router-id 5.5.5.5
+
+
+
+neighbor PG_iBGP peer-group
+neighbor PG_iBGP remote-as 1001
+neighbor PG_iBGP next-hop-self
+neighbor PG_iBGP update-source loopback 0
+
+
+neighbor 10.0.2.6 peer-group PG_iBGP
+neighbor 10.0.2.8 peer-group PG_iBGP
+
+
+neighbor 201.0.0.5 remote-as 3001
+neighbor 201.0.0.3 remote-as 9001
+
+
+network 201.0.0.4 mask 255.255.255.254
+network 201.0.0.2 mask 255.255.255.254
+
+end
+wr
+```
+
+R6:
+
+```
+en
+conf t
+
+router bgp 1001
+bgp router-id 6.6.6.6
+
+
+neighbor PG_iBGP peer-group
+neighbor PG_iBGP remote-as 1001
+neighbor PG_iBGP next-hop-self
+neighbor PG_iBGP update-source loopback 0
+
+
+neighbor 10.0.2.5 peer-group PG_iBGP
+neighbor 10.0.2.8 peer-group PG_iBGP
+
+
+neighbor 201.0.0.1 remote-as 9001
+
+
+
+network 201.0.0.0 mask 255.255.255.254
+
+end
+wr
+```
+
+R8:
+
+```
+en
+conf t
+
+router bgp 1001
+bgp router-id 8.8.8.8
+
+
+neighbor PG_iBGP peer-group
+neighbor PG_iBGP remote-as 1001
+neighbor PG_iBGP next-hop-self
+neighbor PG_iBGP update-source loopback 0
+
+
+neighbor 10.0.2.5 peer-group PG_iBGP
+neighbor 10.0.2.6 peer-group PG_iBGP
+
+
+neighbor 201.0.0.8 remote-as 8001
+neighbor 201.0.0.6 remote-as 2001
+
+
+
+network 201.0.0.8 mask 255.255.255.254
+network 201.0.0.6 mask 255.255.255.254
+
+end
+wr
+```
+
+**ISP2**
+
+R29:
+
+```
+en
+conf t
+
+router bgp 2001
+bgp router-id 29.29.29.29
+
+
+neighbor 202.0.0.2 remote-as 8001
+neighbor 201.0.0.7 remote-as 1001
+neighbor 203.0.0.7 remote-as 3001
+
+network 202.0.0.0 mask 255.255.255.254
+network 203.0.0.6 mask 255.255.255.254
+network 201.0.0.6 mask 255.255.255.254
+network 202.0.0.2 mask 255.255.255.254
+
+end
+wr
+```
+
+**ISP3**
+
+R17:
+
+```
+en
+conf t
+
+router bgp 3001
+bgp router-id 17.17.17.17
+
+
+neighbor PG_iBGP peer-group
+neighbor PG_iBGP remote-as 3001
+neighbor PG_iBGP next-hop-self
+neighbor PG_iBGP update-source loopback 0
+
+
+neighbor 10.0.2.20 peer-group PG_iBGP
+
+neighbor 201.0.0.4 remote-as 1001
+neighbor 203.0.0.0 remote-as 9001
+
+
+
+network 201.0.0.4 mask 255.255.255.254
+network 203.0.0.0 mask 255.255.255.254
+network 203.0.0.2 mask 255.255.255.254
+
+end
+wr
+```
+
+R20:
+
+```
+en
+conf t
+
+router bgp 3001
+bgp router-id 20.20.20.20
+
+
+neighbor PG_iBGP peer-group
+neighbor PG_iBGP remote-as 3001
+neighbor PG_iBGP next-hop-self
+neighbor PG_iBGP update-source loopback 0
+
+
+neighbor 10.0.2.17 peer-group PG_iBGP
+
+neighbor 203.0.0.6 remote-as 2001
+
+network 203.0.0.4 mask 255.255.255.254
+network 203.0.0.6 mask 255.255.255.254
+
+end
+wr
+```
+
+Проверяем маршруты:
+
+![](screenshots/2021-06-14-13-49-53-image.png)
+
+Маршруты приходят.
+
+
+
+
+
+
 ## <a name="realization_base"></a>Базовая настройка сети центрального офиса
 
 ### <a name="realization_address_planning"></a>Планирование адресного пространства центрального офиса
@@ -1459,8 +1961,6 @@ wr
 
 Возможно, это особенность виртуализации. Но в любом случае, с линком может быть все в порядке, но проблемы со связью будут далее по маршруту. Поэтому нужно настроить SLA и icmp-запросы до узлов Интернета.
 
-
-
 Core-1 будет проверять доступность узлов R29 и DC-Core-1:
 
 ![](screenshots/2021-07-09-12-12-27-image.png)
@@ -1493,8 +1993,6 @@ end
 wr
 ```
 
-
-
 Отключим R29:
 
 ![](screenshots/2021-07-09-12-15-23-image.png)
@@ -1505,32 +2003,20 @@ wr
 
 Один track в состоянии Down, но т.к. второй в состоянии Up, итоговый track в состоянии Up и статический маршрут занесен в таблицу маршрутизации.
 
-
-
 Гасим DC-Core-1:
 
 ![](screenshots/2021-07-09-12-22-48-image.png)
-
-
 
 В результате все track в состоянии Down, маршрут удален из таблицы маршрутизации:
 
 ![](screenshots/2021-07-09-12-22-36-image.png)
 
-
-
 При этом если включить Core-2, то Core-1 будет знать выход в Интернет. Но при этом соседи не выберут его дефолтом, т.к. есть более короткий путь через Core-2:
-
- 
 
 ![](screenshots/2021-07-09-12-25-47-image.png)
 
-
-
 Включаем R29 и DC-Core-1 - треки поднялись, сосед Distribution-Stack стал помещать в таблицу маршрутизации оба Core: 
 ![](screenshots/2021-07-09-12-33-49-image.png)
-
-
 
 Аналогичным образом настроим Core-2. У него потребуется отслеживать четыре узла для проверки двух провайдерских линков:
 
@@ -1586,8 +2072,6 @@ end
 wr
 ```
 
-
-
 Гасим из 4 узлов три:
 
 ![](screenshots/2021-07-09-12-50-21-image.png)
@@ -1596,25 +2080,17 @@ wr
 
 ![](screenshots/2021-07-09-12-52-07-image.png)
 
-
-
 Остался один шлюз через E0/1:
 
 ![](screenshots/2021-07-09-12-52-44-image.png)
-
-
 
 Distribution-Stack знает 2 пути по умолчанию:
 
 ![](screenshots/2021-07-09-12-53-24-image.png)
 
-
-
 Гасим последний узел:
 
 ![](screenshots/2021-07-09-13-07-12-image.png)
-
-
 
 На Core-2 все track в состоянии Down, маршрута по умолчанию нет:
 
@@ -1633,8 +2109,6 @@ Core-1 должен сообщать маршрут по умолчанию. Э�
 3. Рассматривать ситуацию, когда все маршруты 0.0.0.0 будут выкинуты из таблицы маршрутизации, как крайне маловероятную. Малая вероятность достигается за счет большого количества тестовых узлов и также за счет их высокой доступности.
 
 4. Добавлять временно маршрут без трека, чтобы через него проверить связь до тестовых узлов и вернуть маршруты в таблицу маршрутизации. После этого удалить неотслеживаемый маршрут. Решение плохо, т.к. требует участия человека.
-
-
 
 Выполним третий вариант и уберем отслеживани одного из маршрутов. Core-2:
 
@@ -1661,900 +2135,13 @@ wr
 
 ![](screenshots/2021-07-09-14-08-06-image.png)
 
-
-
 Видим, что остался один маршрут в Интернет через Core-2. Этот маршрут передан соседям, у них сохранилась связь с Интернетом.
-
-
-
-
 
 Включим узлы, до которых проверяется связь:
 
 ![](screenshots/2021-07-09-14-11-24-image.png)
 
-Вернулись все маршруты. Что и требовалось.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## <a name="realization_providers"></a>Настройка провайдерской сети
-
-### <a name="realization_prov_addr_plan"></a>Планирование адресного пространства
-
-![](screenshots/2021-06-14-12-22-07-image.png)
-
-- Для организации линков между маршрутизаторами одного провайдера используются сети, начиная с 10.0.0.0/31.
-- Для Loopback-интерфейсов - сети, начиная с 10.0.2.0/32.
-- Адреса интерфесов, которыми соединены разные автономные зоны и офисы, берутся из пула провайдера, имеют маску 31 бит.
-  - Пул ISP1 201.0.0.0/8
-  - Пул ISP2 202.0.0.0/8
-  - Пул ISP3 203.0.0.0/8  
-- Первый адрес из подсети /31 назначается вернему маршрутизатору, второй -нижнему.
-
-### <a name="realizatioin_isp_base_config"></a>Базовая настройка маршрутизаторов
-
-Выполним базовую настройку маршрутизаторов - зададим имя устройства и адреса интерфейсов, включим порты.
-
-**Начнем с ISP1.**
-
-R5:
-
-```
-en
-conf t
-hostname R5
-no ip domain-lookup
-int loopback 0
-ip addr 10.0.2.5 255.255.255.255
-
-
-int e0/0
-ip addr 10.0.0.5 255.255.255.254
-no shut
-
-int e0/1
-ip addr 201.0.0.2 255.255.255.254
-no shut
-
-int e0/2
-ip addr 201.0.0.4 255.255.255.254
-no shut
-
-int e0/3
-ip addr 10.0.0.3 255.255.255.254
-no shut
-
-end
-wr
-```
-
-R6:
-
-```
-en
-conf t
-hostname R6
-no ip domain-lookup
-int loopback 0
-ip addr 10.0.2.6 255.255.255.255
-
-
-int e0/0
-ip addr 10.0.0.4 255.255.255.254
-no shut
-
-int e0/1
-ip addr 201.0.0.0 255.255.255.254
-no shut
-
-int e0/2
-ip addr 10.0.0.0 255.255.255.254
-no shut
-
-
-end
-wr
-```
-
-R8:
-
-```
-en
-conf t
-hostname R8
-no ip domain-lookup
-int loopback 0
-ip addr 10.0.2.8 255.255.255.255
-
-
-int e0/0
-ip addr 10.0.0.2 255.255.255.254
-no shut
-
-
-int e0/1
-ip addr 10.0.0.1 255.255.255.254
-no shut
-
-int e0/2
-ip addr 201.0.0.9 255.255.255.254
-no shut
-
-int e0/3
-ip addr 201.0.0.7 255.255.255.254
-no shut
-
-end
-wr
-```
-
-**ISP2**
-
-R29:
-
-```
-en
-conf t
-hostname R29
-no ip domain-lookup
-int loopback 0
-ip addr 10.0.2.29 255.255.255.255
-
-
-int e0/0
-ip addr 201.0.0.6 255.255.255.254
-no shut
-
-int e0/1
-ip addr 203.0.0.6 255.255.255.254
-no shut
-
-int e0/2
-ip addr 202.0.0.3 255.255.255.254
-no shut
-
-int e0/3
-ip addr 202.0.0.0 255.255.255.254
-no shut
-
-
-end
-wr
-```
-
-**ISP3**
-
-R17:
-
-```
-en
-conf t
-hostname R17
-no ip domain-lookup
-int loopback 0
-ip addr 10.0.2.17 255.255.255.255
-
-
-int e0/0
-ip addr 201.0.0.5 255.255.255.254
-no shut
-
-int e0/1
-ip addr 203.0.0.2 255.255.255.254
-no shut
-
-int e0/2
-ip addr 203.0.0.1 255.255.255.254
-no shut
-
-int e0/3
-ip addr 10.0.0.0 255.255.255.254
-no shut
-
-
-end
-wr
-```
-
-R20:
-
-```
-en
-conf t
-hostname R20
-no ip domain-lookup
-int loopback 0
-ip addr 10.0.2.20 255.255.255.255
-
-
-int e0/0
-ip addr 203.0.0.4 255.255.255.254
-no shut
-
-
-int e0/1
-ip addr 10.0.0.1 255.255.255.254
-no shut
-
-int e0/3
-ip addr 203.0.0.7 255.255.255.254
-no shut
-
-
-
-end
-wr
-```
-
-### <a name="realization_isp_igp"></a>Настройка IGP
-
-В качестве протокола внутренней динамической маршрутизации выберем протокол IS-IS. Каждый маршрутизатор находится в своей зоне, взаимодействие только L2.
-
-**ISP1**
-
-R5:
-
-```
-en
-conf t
-router isis
-net 49.5555.0005.0005.0005.00
-is-type level-2-only
-exit
-int range e0/0,e0/3, loopback 0
-ip router isis
-end
-wr
-```
-
-R6:
-
-```
-en
-conf t
-router isis
-net 49.6666.0006.0006.0006.00
-is-type level-2-only
-exit
-int range e0/0,e0/2, loopback 0
-ip router isis
-end
-wr
-```
-
-R8:
-
-```
-en
-conf t
-router isis
-net 49.8888.0008.0008.0008.00
-is-type level-2-only
-exit
-int range e0/0,e0/1, loopback 0
-ip router isis
-end
-wr
-```
-
-Пример результата:
-
-![](screenshots/2021-06-14-13-05-28-image.png)
-
-Получены маршруты до внутренних сетей и лупбэков.
-
-**ISP3**
-
-R17:
-
-```
-en
-conf t
-router isis
-net 49.1717.1717.1717.1717.00
-is-type level-2-only
-exit
-int range e0/3, loopback 0
-ip router isis
-end
-wr
-```
-
-R20:
-
-```
-en
-conf t
-router isis
-net 49.2020.2020.2020.2020.00
-is-type level-2-only
-exit
-int range e0/1, loopback 0
-ip router isis
-end
-wr
-```
-
-Результат:
-
-![](screenshots/2021-06-14-13-09-32-image.png)
-
-Получен маршрут до loopback соседа.
-
-### <a name="realization_isp_bgp"></a>Настройка BGP
-
-Выполним настройку eBGP и iBGP в провайдерских сетях.
-
-**ISP1**
-
-R5:
-
-```
-en
-conf t
-
-router bgp 1001
-bgp router-id 5.5.5.5
-
-
-
-neighbor PG_iBGP peer-group
-neighbor PG_iBGP remote-as 1001
-neighbor PG_iBGP next-hop-self
-neighbor PG_iBGP update-source loopback 0
-
-
-neighbor 10.0.2.6 peer-group PG_iBGP
-neighbor 10.0.2.8 peer-group PG_iBGP
-
-
-neighbor 201.0.0.5 remote-as 3001
-neighbor 201.0.0.3 remote-as 9001
-
-
-network 201.0.0.4 mask 255.255.255.254
-network 201.0.0.2 mask 255.255.255.254
-
-end
-wr
-```
-
-R6:
-
-```
-en
-conf t
-
-router bgp 1001
-bgp router-id 6.6.6.6
-
-
-neighbor PG_iBGP peer-group
-neighbor PG_iBGP remote-as 1001
-neighbor PG_iBGP next-hop-self
-neighbor PG_iBGP update-source loopback 0
-
-
-neighbor 10.0.2.5 peer-group PG_iBGP
-neighbor 10.0.2.8 peer-group PG_iBGP
-
-
-neighbor 201.0.0.1 remote-as 9001
-
-
-
-network 201.0.0.0 mask 255.255.255.254
-
-end
-wr
-```
-
-R8:
-
-```
-en
-conf t
-
-router bgp 1001
-bgp router-id 8.8.8.8
-
-
-neighbor PG_iBGP peer-group
-neighbor PG_iBGP remote-as 1001
-neighbor PG_iBGP next-hop-self
-neighbor PG_iBGP update-source loopback 0
-
-
-neighbor 10.0.2.5 peer-group PG_iBGP
-neighbor 10.0.2.6 peer-group PG_iBGP
-
-
-neighbor 201.0.0.8 remote-as 8001
-neighbor 201.0.0.6 remote-as 2001
-
-
-
-network 201.0.0.8 mask 255.255.255.254
-network 201.0.0.6 mask 255.255.255.254
-
-end
-wr
-```
-
-**ISP2**
-
-R29:
-
-```
-en
-conf t
-
-router bgp 2001
-bgp router-id 29.29.29.29
-
-
-neighbor 202.0.0.2 remote-as 8001
-neighbor 201.0.0.7 remote-as 1001
-neighbor 203.0.0.7 remote-as 3001
-
-network 202.0.0.0 mask 255.255.255.254
-network 203.0.0.6 mask 255.255.255.254
-network 201.0.0.6 mask 255.255.255.254
-network 202.0.0.2 mask 255.255.255.254
-
-end
-wr
-```
-
-**ISP3**
-
-R17:
-
-```
-en
-conf t
-
-router bgp 3001
-bgp router-id 17.17.17.17
-
-
-neighbor PG_iBGP peer-group
-neighbor PG_iBGP remote-as 3001
-neighbor PG_iBGP next-hop-self
-neighbor PG_iBGP update-source loopback 0
-
-
-neighbor 10.0.2.20 peer-group PG_iBGP
-
-neighbor 201.0.0.4 remote-as 1001
-neighbor 203.0.0.0 remote-as 9001
-
-
-
-network 201.0.0.4 mask 255.255.255.254
-network 203.0.0.0 mask 255.255.255.254
-network 203.0.0.2 mask 255.255.255.254
-
-end
-wr
-```
-
-R20:
-
-```
-en
-conf t
-
-router bgp 3001
-bgp router-id 20.20.20.20
-
-
-neighbor PG_iBGP peer-group
-neighbor PG_iBGP remote-as 3001
-neighbor PG_iBGP next-hop-self
-neighbor PG_iBGP update-source loopback 0
-
-
-neighbor 10.0.2.17 peer-group PG_iBGP
-
-neighbor 203.0.0.6 remote-as 2001
-
-network 203.0.0.4 mask 255.255.255.254
-network 203.0.0.6 mask 255.255.255.254
-
-end
-wr
-```
-
-Проверяем маршруты:
-
-![](screenshots/2021-06-14-13-49-53-image.png)
-
-Маршруты приходят.
+Вернулись все маршруты. Что и требовалось - реализованы отслеживание доступности узлов и коррекция маршрутов в Интернет при отсутствии связи через определенного провайдера.
 
 ## <a name="realization_dc_base"></a>Базовая настройка сети в дата-центре
 
