@@ -21,7 +21,7 @@
       3. [Настройка IGP.](#realization_isp_igp)
       4. [Настройка BGP.](#realization_isp_bgp)
    
-   3. [Базовая настройка сети центрального офиса](#realization_base)
+   3. [Настройка сети центрального офиса](#realization_base)
       
       1. [Планирование адресного пространства центрального офиса.](#realization_address_planning)
          1. [Исходные данные.](#realization_input)
@@ -39,7 +39,7 @@
       6. [Настройка NAT.](#realization_nat)
       7. [Настройка SLA.](#realization_sla)
    
-   4. [Базовая настройка сети в дата-центре.](#realization_dc_base)
+   4. [Настройка сети в дата-центре.](#realization_dc_base)
       
       1. [Планирование адресного пространства.](#realization_dc_addr_plan)
       2. [Базовая настройка сетевых устройств.](#realization_dc_conf_base)
@@ -47,6 +47,13 @@
       4. [Настройка EGP-динамической маршрутизации](#realization_dc_conf_dynamic_egp)
       5. [Настройка NAT](#realization_dc_conf_nat)
       6. [Настройка SLA](#realization_dc_conf_sla)
+   
+   5. [Настройка сети в филиале.](#realization_branch1_base)      
+      
+      1. [Планирование адресного пространства.](#realization_branch1_addr_plan)
+      2. [Базовая настройка сетевых устройств.](#realization_branch1_conf_base)
+      3. [Настройка NAT](#realization_branch1_conf_nat)
+      4. [Настройка SLA](#realization_branch1_conf_sla)
 
 # <a name="net_whole"></a>Общая схема сети
 
@@ -608,7 +615,7 @@ wr
 
 Маршруты приходят.
 
-## <a name="realization_base"></a>Базовая настройка сети центрального офиса
+## <a name="realization_base"></a>Настройка сети центрального офиса
 
 ### <a name="realization_address_planning"></a>Планирование адресного пространства центрального офиса
 
@@ -1873,7 +1880,7 @@ NAT необходимо настроить на Core-1 и Core-2. На марш
 
 Отключим Core-2 на время настройки Core-1.
 
-Core01:
+Core-1:
 
 ```
 en
@@ -2143,7 +2150,7 @@ wr
 
 Вернулись все маршруты. Что и требовалось - реализованы отслеживание доступности узлов и коррекция маршрутов в Интернет при отсутствии связи через определенного провайдера.
 
-## <a name="realization_dc_base"></a>Базовая настройка сети в дата-центре
+## <a name="realization_dc_base"></a>Настройка сети в дата-центре
 
 ### <a name="realization_dc_addr_plan"></a>Планирование адресного пространства
 
@@ -2722,14 +2729,110 @@ wr
 
 Для того, чтобы ответный пакет приходил на тот же маршрутизатор, мы можем выполнить настройку, при которой пограничные маршрутизаторы будут анонсировать только свои префиксы, но не префиксы соседа по автономной системе. Но это усложнит работу - каждый маршрутизатор будет анонсировать не только общий префикс 24, но и подсети из этого префикса.
 
-
-
 ??? как поступить
 
 ### <a name="realization_dc_conf_sla"></a>Настройка SLA
 
-
-
 Обычная настройка SLA при BGP не подойдет, потому что ответный пакет может прийти не только на интерфейс, который был указан в качестве источника запроса, но и на интерфейс, к которому подключен iBGP-сосед. Формально ответ получен, но пришел он не через того провайдера, который подключен к интерфейсу-источнику запроса.
 
 ???Как поступить 
+
+## <a name="realization_branch1_base"></a>Настройка сети в филиале
+
+![](screenshots/2021-07-10-23-31-11-image.png)
+
+Под сеть выделен большой диапазон адресов, на стенде оставим только одно конечное устройство.
+
+### <a name="realization_branch1_conf_base"></a>Базовая настройка R27, DHCP
+
+Настроим адресацию на маршрутизаторе, сервер DHCP на нем же.
+
+R27:
+
+```
+en
+conf t
+no ip domain-lookup
+hostname R27
+
+ip route 0.0.0.0 0.0.0.0 ethernet 0/0 203.0.0.4
+ip route 0.0.0.0 0.0.0.0 ethernet 0/3 203.0.0.2
+
+int loopback 0
+ip addr 10.183.244.0 255.255.255.255
+
+
+int e0/2
+ip addr 10.180.0.1 255.255.255.0
+no shut
+
+int e0/0
+ip addr 203.0.0.5 255.255.255.254
+no shut
+
+
+int e0/3
+ip addr 203.0.0.3 255.255.255.254
+no shut
+
+
+ip dhcp excluded-address  10.180.0.1
+
+ip dhcp pool POOL_180
+network 10.180.0.0 255.255.255.0
+default-router 10.180.0.1
+
+
+end 
+wr
+```
+
+### <a name="realization_branch1_conf_nat"></a>Настройка NAT
+
+R27:
+
+```
+en
+conf t
+ip access-list standard ACL_NAT
+permit 10.0.0.0 0.255.255.255
+
+
+route-map RM_NAT_ISP1 permit 10
+match ip address ACL_NAT
+match interface e0/0
+exit
+
+route-map RM_NAT_ISP2 permit 10
+match ip address ACL_NAT
+match interface e0/3
+exit
+
+
+int range e0/0, e0/3
+ip nat outside
+
+int range e0/2
+ip nat inside
+
+
+ip nat inside source route-map RM_NAT_ISP1 interface e0/0 overload
+ip nat inside source route-map RM_NAT_ISP2 interface e0/3 overload
+
+end
+wr
+```
+
+Трассировка с клиентского устройства:
+
+![](screenshots/2021-07-10-23-45-39-image.png)
+
+Пакеты уходят через обоих провайдеров, работает балансировка.
+
+
+
+### <a name="realization_branch1_conf_sla"></a>Настройка SLA
+
+
+
+Настройка аналогична настройке в центральном офисе, останавливаться на ней не будем.
