@@ -54,6 +54,18 @@
       2. [Базовая настройка сетевых устройств.](#realization_branch1_conf_base)
       3. [Настройка NAT](#realization_branch1_conf_nat)
       4. [Настройка SLA](#realization_branch1_conf_sla)
+   
+   6. [Настройка DMVPN между дата-центром, центральным офисом и филиалом](#realization_dmvpn)
+      
+      1. [Адресация туннелей](#realization_dmvpn_address)
+      2. [Настройка туннелей](#realization_dmvpn_config)
+      3. [Настройка динамической маршрутизации](#realization_dmvpn_eigrp_base)
+      4. [Фильтрация анонсов](#realization_dmvpn_eigrp_filter)
+      5. [Суммаризация](#realization_dmvpn_eigrp_summ)
+   
+   7. [Настройка сети в офисе контрагента](#)
+   
+   8. [Настройка DMVPN в офисе контагента и трансляции адресов](#)
 
 # <a name="net_whole"></a>Общая схема сети
 
@@ -2829,10 +2841,589 @@ wr
 
 Пакеты уходят через обоих провайдеров, работает балансировка.
 
-
-
 ### <a name="realization_branch1_conf_sla"></a>Настройка SLA
 
-
-
 Настройка аналогична настройке в центральном офисе, останавливаться на ней не будем.
+
+## <a name="realization_dmvpn"></a>Настройка DMVPN между дата-центром, центральным офисом и филиалом
+
+Хабы расположены в дата-центре. Создадим по одному туннелю на каждом хабе. Источниками туннеля будут Loopback 50/60. На споках может быть только разные туннели на разных физических интерфейсах - поэтому на споках с двумя физическими интерфейсами строим по одному туннелю на каждом линке; на споках с одним физическим интерфейсом строим два туннеля на одном линке: 
+
+![](screenshots/2021-07-11-21-32-22-image.png)
+
+Решение не самое лучшее:
+
+1. В маловероятном случае, когда линк e0/0 на R27 упадет, останется только один туннель до DC-Core-2. Если DC-Core-2 выйдет из строя, то R27 потеряет связь через VPN.
+
+2. Без дополнительной настройки пакеты для туннеля 50 будут идти к DC-Core-1 в ряде случаев через DC-Core-2.
+
+Тем не менее, реализуем его.
+
+### <a name="realization_dmvpn"></a>Адресация туннелей
+
+Для туннелей будем использовать адреса 10.179.0.0-10.179.255.255.
+
+### <a name="realization_dmvpn_config"></a>Настройка туннелей
+
+DC-Core-1:
+
+```
+en
+conf t
+
+crypto isakmp policy 10
+auth pre-share
+
+crypto isakmp key otus address 201.0.0.1
+crypto isakmp key otus address 201.0.0.3
+crypto isakmp key otus address 203.0.0.5
+
+crypto ipsec transform-set ENC_ALG esp-aes 256
+mode transport
+
+crypto ipsec profile OTUS
+set transform-set ENC_ALG
+
+
+int loopback 50
+ip addr 54.0.11.50 255.255.255.255
+exit
+
+int tunnel 50
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip addr 10.179.50.1 255.255.255.0
+tunnel mode gre multipoint
+ip nhrp map multicast dynamic
+ip nhrp network-id 50
+tunnel source loopback 50
+ip nhrp redirect
+tunnel key 50
+tunnel protection ipsec profile OTUS
+
+router bgp 9001
+address-family ipv4 unicast
+network 54.0.11.50 mask 255.255.255.255
+
+
+end
+wr
+```
+
+DC-Core-2:
+
+```
+en
+conf t
+
+
+
+crypto isakmp policy 10
+auth pre-share
+
+crypto isakmp key otus address 201.0.0.1
+crypto isakmp key otus address 203.0.0.0
+crypto isakmp key otus address 203.0.0.3
+
+crypto ipsec transform-set ENC_ALG esp-aes 256
+mode transport
+
+crypto ipsec profile OTUS
+set transform-set ENC_ALG
+
+
+int loopback 60
+ip addr 54.0.11.60 255.255.255.255
+exit
+
+int tunnel 60
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip addr 10.179.60.1 255.255.255.0
+tunnel mode gre multipoint
+ip nhrp map multicast dynamic
+ip nhrp network-id 60
+tunnel source loopback 60
+ip nhrp redirect
+tunnel key 60
+tunnel protection ipsec profile OTUS
+
+router bgp 9001
+address-family ipv4 unicast
+network 54.0.11.60 mask 255.255.255.255
+
+
+end
+wr
+```
+
+Core-1:
+
+```
+en
+conf t
+
+
+crypto isakmp policy 10
+auth pre-share
+
+crypto isakmp key otus address 54.0.11.50
+crypto isakmp key otus address 54.0.11.60
+
+crypto ipsec transform-set ENC_ALG esp-aes 256
+mode transport
+
+crypto ipsec profile OTUS
+set transform-set ENC_ALG
+
+
+int tu 50
+ip addr 10.179.50.11 255.255.255.0
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip nhrp network-id 50
+tunnel source e0/1
+tunnel mode gre multipoint
+ip nhrp shortcut
+ip nhrp map 10.179.50.1 54.0.11.50
+ip nhrp nhs 10.179.50.1
+ip nhrp map multicast 54.0.11.50
+tunnel key 50
+tunnel protection ipsec profile OTUS
+
+int tu 60
+ip addr 10.179.60.11 255.255.255.0
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip nhrp network-id 60
+tunnel source e0/1
+tunnel mode gre multipoint
+ip nhrp shortcut
+ip nhrp map 10.179.60.1 54.0.11.60
+ip nhrp nhs 10.179.60.1
+ip nhrp map multicast 54.0.11.60
+ip nhrp map multicast 54.0.11.60
+tunnel key 60
+tunnel protection ipsec profile OTUS
+
+
+end
+wr
+```
+
+Core-2:
+
+```
+en
+conf t
+
+
+crypto isakmp policy 10
+auth pre-share
+
+crypto isakmp key otus address 54.0.11.50
+crypto isakmp key otus address 54.0.11.60
+
+crypto ipsec transform-set ENC_ALG esp-aes 256
+mode transport
+
+crypto ipsec profile OTUS
+set transform-set ENC_ALG
+
+
+int tu 50
+ip addr 10.179.50.22 255.255.255.0
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip nhrp network-id 50
+tunnel source e0/1
+tunnel mode gre multipoint
+ip nhrp shortcut
+ip nhrp map 10.179.50.1 54.0.11.50
+ip nhrp nhs 10.179.50.1
+ip nhrp map multicast 54.0.11.50
+tunnel key 50
+tunnel protection ipsec profile OTUS
+
+
+
+
+
+int tu 60
+ip addr 10.179.60.22 255.255.255.0
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip nhrp network-id 60
+tunnel source e1/1
+tunnel mode gre multipoint
+ip nhrp shortcut
+ip nhrp map 10.179.60.1 54.0.11.60
+ip nhrp nhs 10.179.60.1
+ip nhrp map multicast 54.0.11.60
+tunnel key 60
+tunnel protection ipsec profile OTUS
+
+
+end
+wr
+```
+
+R27:
+
+```
+en
+conf t
+
+crypto isakmp policy 10
+auth pre-share
+
+crypto isakmp key otus address 54.0.11.50
+crypto isakmp key otus address 54.0.11.60
+
+crypto ipsec transform-set ENC_ALG esp-aes 256
+mode transport
+
+crypto ipsec profile OTUS
+set transform-set ENC_ALG
+
+int tu 50
+ip addr 10.179.50.27 255.255.255.0
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip nhrp network-id 50
+tunnel source e0/0
+tunnel mode gre multipoint
+ip nhrp shortcut
+ip nhrp map 10.179.50.1 54.0.11.50
+ip nhrp nhs 10.179.50.1
+ip nhrp map multicast 54.0.11.50
+tunnel key 50
+tunnel protection ipsec profile OTUS
+
+
+
+
+
+int tu 60
+ip addr 10.179.60.27 255.255.255.0
+ip mtu 1400
+ip tcp adjust-mss 1360
+ip nhrp network-id 60
+tunnel source e0/3
+tunnel mode gre multipoint
+ip nhrp shortcut
+ip nhrp map 10.179.60.1 54.0.11.60
+ip nhrp nhs 10.179.60.1
+ip nhrp map multicast 54.0.11.60
+tunnel key 60
+tunnel protection ipsec profile OTUS
+
+
+end
+wr
+```
+
+Проверим связь:
+
+![](screenshots/2021-07-11-21-33-32-image.png)
+
+ICMP-запросы проходят.
+
+### <a name="realization_dmvpn_eigrp_base"></a>Настройка динамической маршрутизации
+
+Для EIGRP на хабах мы должны отключить в туннельных интерфейсах split horizon и next-hop-self. Для установления соседства требуется выполнить команду network, а также разрешить отправку и прием hello с интерфейса.
+
+DC-Core-1:
+
+```
+en
+conf t
+
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+af-interface tu 50
+no passive-interface
+no split-horizon
+no next-hop-self
+exit-af-interface
+network 10.179.50.0 0.0.0.255
+
+end
+wr
+```
+
+DC-Core-2:
+
+```
+en
+conf t
+
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+af-interface tu 60
+no passive-interface
+no split-horizon
+no next-hop-self
+exit-af-interface
+network 10.179.60.0 0.0.0.255
+
+end
+wr
+```
+
+Core-1:
+
+```
+en
+conf t
+
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+network 10.179.50.0 0.0.0.255
+network 10.179.60.0 0.0.0.255
+af-interface tu 50
+no passive-interface
+exit-af-interface
+af-interface tu 60
+no passive-interface
+exit-af-interface
+
+
+end
+wr
+```
+
+Core-2:
+
+```
+en
+conf t
+
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+network 10.179.50.0 0.0.0.255
+network 10.179.60.0 0.0.0.255
+af-interface tu 50
+no passive-interface
+exit-af-interface
+af-interface tu 60
+no passive-interface
+exit-af-interface
+
+
+end
+wr
+```
+
+R27:
+
+```
+en
+conf t
+
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+network 10.179.50.0 0.0.0.255
+network 10.179.60.0 0.0.0.255
+network 10.180.0.0 0.0.0.255
+
+af-interface tu 50
+no passive-interface
+exit-af-interface
+af-interface tu 60
+no passive-interface
+exit-af-interface
+
+
+end
+wr
+```
+
+### <a name="realization_dmvpn_eigrp_filter"></a>Фильтрация анонсов
+
+Соседство устанавливается, но затем прекращается. Причина в том, что на Core-1 приходит маршрут от DC-Core-1 с маршрутом до белого NBMA адреса, к которому идет подключение для установки туннеля:
+
+![](screenshots/2021-07-12-12-29-15-image.png)
+
+Этот маршрут попадает на DC-Core-1 в анонсы, т.к.:
+
+1. Маршрут прописан через ip route. Цель - возможность анонса в BGP.
+
+2. Выполнена редистрибуция статических маршрутов в EIGRP. Цель - чтобы ядро могло по EIGRP анонсировать дефолт в дата-центре.
+
+Отсюда делаем вывод - нужно выполнить фильтрацию анонсов EIGRP в туннели. В туннели будем направлять лишь информацию о внутренних сетях 10.0.0.0/8.
+
+DC-Core-1:
+
+```
+en
+conf t
+ip access-list standard ACL_DENY_EIGRP_PREFIXES
+permit 10.0.0.0 0.255.255.255
+deny any
+
+
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+topology base
+distribute-list ACL_DENY_EIGRP_PREFIXES out Tunnel50
+end
+wr
+```
+
+DC-Core-2:
+
+```
+en
+conf t
+ip access-list standard ACL_DENY_EIGRP_PREFIXES
+permit 10.0.0.0 0.255.255.255
+deny any
+
+
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+topology base
+distribute-list ACL_DENY_EIGRP_PREFIXES out Tunnel60
+
+end
+wr
+```
+
+Аналогично для предотвращения потенциальных проблем выполняем настройку в филиалах - анонсируем только маршруты до сетей 10.0.0.0/8.
+
+Core-1, Core-2, R27:
+
+```
+en
+conf t
+ip access-list standard ACL_DENY_EIGRP_PREFIXES
+permit 10.0.0.0 0.255.255.255
+deny any
+
+
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+topology base
+distribute-list ACL_DENY_EIGRP_PREFIXES out Tunnel50
+distribute-list ACL_DENY_EIGRP_PREFIXES out Tunnel60
+
+end
+wr
+```
+
+### <a name="realization_dmvpn_eigrp_summ"></a>Суммаризация
+
+Для сокращения количества маршртутов выполним суммаризацию. В центральном офисе и филиале - до суммарной сети на площадках, в дата-центре - до суммарной сети 10.0.0.0/8.
+
+DC-Core-1:
+
+```
+en
+conf t
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+af-interface tu 50
+summary-address 10.0.0.0 255.0.0.0
+
+end
+wr
+```
+
+DC-Core-2:
+
+```
+en
+conf t
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+af-interface tu 60
+summary-address 10.0.0.0 255.0.0.0
+
+end
+wr
+```
+
+Core-1, Core-2:
+
+```
+en
+conf t
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+
+af-interface tu 50
+summary-address 10.192.0.0 255.192.0.0
+exit-af-interface
+
+af-interface tu 60
+summary-address 10.192.0.0 255.192.0.0
+
+end
+wr
+```
+
+R27:
+
+```
+en
+conf t
+router eigrp NAMED
+address-family ipv4 unicast autonomous-system 1
+
+af-interface tu 50
+summary-address 10.180.0.0 255.252.0.0
+exit-af-interface
+
+af-interface tu 60
+summary-address 10.180.0.0 255.252.0.0
+
+end
+wr
+```
+
+Смотрим результат.
+
+![](screenshots/2021-07-12-14-28-21-image.png)
+
+DC-Core-1, DC-Core-2:
+
+![](screenshots/2021-07-12-14-29-04-image.png)
+
+1. Маршрут по умолчанию идет в Null0. Это нормально, т.к. маршрутизатор имеет всю маршрутную информацию об узлах в интернете и маршрут по умолчаню нужен лишь для анонса внутрь сети дата-центра.
+
+2. Известны маршруты EIGRP до сетей в дата-центре.
+
+3. Известны суммарные маршруты EIGRP до сетей в центральном офисе и филиале.
+
+4. Известны маршруты до туннельных сетей.
+
+Core-1, Core-2:
+
+![](screenshots/2021-07-12-14-33-02-image.png)
+
+1. Маршрут по умолчанию идет через провайдеров.
+
+2. Известны маршруты EIGRP до сетей в центральном офисе.
+
+3. Известен суммарный маршрут EIGRP до сети 10.0.0.0 через дата-центр.
+
+4. Известны маршруты до туннельных сетей.
+
+R27:
+
+![](screenshots/2021-07-12-14-51-02-image.png)
+
+1. Маршрут по умолчанию идет через провайдеров.
+
+2. Известны маршруты EIGRP до сетей в филиале.
+
+3. Известен суммарный маршрут EIGRP до сети 10.0.0.0 через дата-центр.
+
+4. Известны маршруты до туннельных сетей.
+
+Проверим, как работает фаза 3 DMVPN. Выполним из центрального офиса проверку связи до филиала:
+
+![](screenshots/2021-07-12-14-53-24-image.png)
+
+Связь есть, но пакеты идут через хабы. Это особенность виртуализации??? Не помогли wipe, перезагрузки, переподнятия интерфейсов.
